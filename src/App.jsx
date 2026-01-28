@@ -1,32 +1,58 @@
 import { useState, useEffect } from 'react'
 
+// Твой сервер на Амвере
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
+
 function App() {
   const [products, setProducts] = useState([])
-  // Состояние для хранения имени пользователя
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    // --- НАЧАЛО БЕЗОПАСНОГО БЛОКА ---
-    // 1. Проверяем, существует ли объект Telegram
+    // 1. Инициализация Телеграма
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
-      
-      // Пытаемся достать юзера (безопасно)
-      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        setUser(tg.initDataUnsafe.user);
-      }
-    } else {
-      console.log("Telegram SDK не найден. Запущен в обычном браузере?");
-    }
-    // --- КОНЕЦ БЕЗОПАСНОГО БЛОКА ---
+      tg.expand(); // Разворачиваем на весь экран
 
-    // 2. Загружаем товары (это работает всегда)
-    fetch('https://firmashop-truear.waw0.amvera.tech/api/products')
+      // Безопасно достаем данные юзера
+      const userData = tg.initDataUnsafe?.user;
+      
+      if (userData) {
+        setUser(userData);
+        // 🔥 ГЛАВНОЕ: Отправляем данные на сервер (Тихая регистрация)
+        loginUser(userData);
+      }
+    }
+
+    // 2. Загрузка товаров
+    fetch(`${API_URL}/products`)
       .then(res => res.json())
       .then(data => setProducts(data))
       .catch(err => console.error("Ошибка загрузки товаров:", err))
   }, [])
+
+  // Функция входа / регистрации
+  const loginUser = async (tgUser) => {
+    try {
+      const response = await fetch(`${API_URL}/auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          telegram_id: tgUser.id,
+          username: tgUser.username,
+          first_name: tgUser.first_name,
+          // Сюда потом добавим реферальный код (start_param)
+        }),
+      });
+      
+      const data = await response.json();
+      console.log("Login success:", data); // В консоли увидим ответ сервера
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
@@ -36,8 +62,7 @@ function App() {
         <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto">
           <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
           <div className="text-xs font-mono text-gray-400">
-            {/* Вот здесь магия: если юзер есть, пишем имя, иначе GUEST */}
-            {user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST MODE'}
+            {user ? `HI, ${user.first_name?.toUpperCase()}` : 'GUEST MODE'}
           </div>
         </div>
       </header>
@@ -68,23 +93,26 @@ function App() {
           <div className="grid grid-cols-1 gap-8">
             {products.map((product) => (
               <div key={product.id} className="group cursor-pointer">
-                {/* Image Container */}
                 <div className="aspect-square bg-[#111] mb-4 overflow-hidden relative">
-                   {product.image_url && (
+                   {product.image_url ? (
                      <img 
                        src={product.image_url} 
                        alt={product.name}
                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                      />
-                   )}
-                   {!product.image_url && (
+                   ) : (
                      <div className="w-full h-full flex items-center justify-center text-gray-700 font-mono text-xs">
                        NO IMAGE
                      </div>
                    )}
+                   {/* Бейджик, если товар не активен (для админа) */}
+                   {!product.is_active && (
+                     <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase">
+                       Sold Out
+                     </div>
+                   )}
                 </div>
                 
-                {/* Info */}
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-lg font-bold leading-none mb-1">{product.name}</h3>
