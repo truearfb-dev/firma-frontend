@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Loader, ShoppingBag } from 'lucide-react'
+import { Loader, CheckCircle } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
-import Cart from './Cart' // <--- Импорт Корзины
+import Cart from './Cart'
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
@@ -14,8 +14,11 @@ function App() {
   
   // --- STATE ---
   const [selectedProduct, setSelectedProduct] = useState(null) 
-  const [cart, setCart] = useState([]) // Корзина
-  const [isCartOpen, setIsCartOpen] = useState(false) // Открыта ли корзина?
+  const [cart, setCart] = useState([]) 
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  
+  // Новое состояние: Успешный заказ
+  const [orderSuccess, setOrderSuccess] = useState(false)
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -60,9 +63,8 @@ function App() {
 
   // --- ЛОГИКА КОРЗИНЫ ---
   const handleAddToCart = (product) => {
-    setCart([...cart, product]); // Добавляем товар
-    setSelectedProduct(null); // Закрываем карточку
-    // Можно добавить виброотклик
+    setCart([...cart, product]); 
+    setSelectedProduct(null); 
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
@@ -72,14 +74,67 @@ function App() {
     setCart(cart.filter((_, index) => index !== indexToRemove));
   }
 
-  const handleCheckout = () => {
-    alert("Checkout functionality coming soon!"); // Заглушка
+  // 🔥 ГЛАВНАЯ ФУНКЦИЯ: ОФОРМЛЕНИЕ ЗАКАЗА
+  const handleCheckout = async () => {
+    if (!user) {
+        alert("Ошибка: Пользователь не найден. Зайдите через Телеграм.");
+        return;
+    }
+
+    // Собираем ID товаров: [1, 5, 2]
+    const itemIds = cart.map(item => item.id);
+
+    try {
+        const response = await fetch(`${API_URL}/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                telegram_id: user.id,
+                items: itemIds
+            })
+        });
+
+        if (response.ok) {
+            // УСПЕХ!
+            setCart([]); // Очищаем корзину
+            setIsCartOpen(false); // Закрываем корзину
+            setOrderSuccess(true); // Показываем экран успеха
+            
+            // Вибрация
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+        } else {
+            alert("Ошибка при оформлении заказа");
+        }
+    } catch (error) {
+        console.error("Checkout error:", error);
+        alert("Ошибка сети");
+    }
   }
 
-  // Считаем сумму для плашки
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
-  // --- РЕНДЕР ПРОФИЛЯ ---
+  // --- ЭКРАН УСПЕХА ---
+  if (orderSuccess) {
+      return (
+          <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in text-center">
+              <CheckCircle size={64} className="text-white mb-6" />
+              <h1 className="text-4xl font-black uppercase mb-4 tracking-tighter">Order<br/>Confirmed</h1>
+              <p className="text-gray-400 font-mono text-xs max-w-xs mb-12">
+                  Ваш заказ успешно принят. Менеджер свяжется с вами в ближайшее время.
+              </p>
+              <button 
+                  onClick={() => setOrderSuccess(false)}
+                  className="bg-white text-black px-8 py-4 font-bold uppercase tracking-wider text-sm rounded-lg w-full max-w-xs"
+              >
+                  Continue Shopping
+              </button>
+          </div>
+      )
+  }
+
+  // --- ОСНОВНОЙ РЕНДЕР ---
   const renderProfile = () => (
     <div className="pt-32 px-6 text-center animate-fade-in">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
@@ -112,17 +167,15 @@ function App() {
 
       <main className="max-w-md mx-auto">
         
-        {/* ЭКРАН КОРЗИНЫ (Поверх всего) */}
         {isCartOpen && (
           <Cart 
             items={cart} 
             onClose={() => setIsCartOpen(false)} 
             onRemove={handleRemoveFromCart}
-            onCheckout={handleCheckout}
+            onCheckout={handleCheckout} // <--- Теперь здесь реальная функция
           />
         )}
 
-        {/* ЭКРАН ТОВАРА (Поверх магазина, но под корзиной) */}
         {selectedProduct && !isCartOpen && (
           <ProductDetail 
             product={selectedProduct} 
@@ -131,7 +184,6 @@ function App() {
           />
         )}
 
-        {/* ВИТРИНА */}
         {!selectedProduct && !isCartOpen && activeTab === 'shop' && (
            <div className="animate-fade-in">
              <section className="pt-32 pb-12 px-6 flex flex-col items-center justify-center text-center border-b border-white/5">
@@ -181,11 +233,9 @@ function App() {
            </div>
         )}
 
-        {/* ПРОФИЛЬ */}
         {!selectedProduct && !isCartOpen && activeTab === 'profile' && renderProfile()}
       </main>
 
-      {/* --- FLOATING CART BAR (Появляется, если есть товары) --- */}
       {!selectedProduct && !isCartOpen && cart.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
            <button 
@@ -203,8 +253,7 @@ function App() {
         </div>
       )}
 
-      {/* Меню */}
-      {!selectedProduct && !isCartOpen && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
+      {!selectedProduct && !isCartOpen && !orderSuccess && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
     </div>
   )
 }
