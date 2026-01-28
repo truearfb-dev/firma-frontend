@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Loader } from 'lucide-react'
+import { Loader, ShoppingBag } from 'lucide-react'
 import BottomNav from './BottomNav'
-import ProductDetail from './ProductDetail' // <--- Импорт нового экрана
+import ProductDetail from './ProductDetail'
+import Cart from './Cart' // <--- Импорт Корзины
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
@@ -11,8 +12,10 @@ function App() {
   const [activeTab, setActiveTab] = useState('shop')
   const [isLoading, setIsLoading] = useState(true)
   
-  // --- НОВОЕ СОСТОЯНИЕ: Выбранный товар ---
+  // --- STATE ---
   const [selectedProduct, setSelectedProduct] = useState(null) 
+  const [cart, setCart] = useState([]) // Корзина
+  const [isCartOpen, setIsCartOpen] = useState(false) // Открыта ли корзина?
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -55,28 +58,35 @@ function App() {
     }
   }
 
-  // Заглушка для добавления в корзину (реализуем в следующем шаге)
+  // --- ЛОГИКА КОРЗИНЫ ---
   const handleAddToCart = (product) => {
-    console.log("Added to cart:", product.name);
-    // Тут будет анимация и логика корзины
-    setSelectedProduct(null); // Закрываем карточку после добавления (опционально)
+    setCart([...cart, product]); // Добавляем товар
+    setSelectedProduct(null); // Закрываем карточку
+    // Можно добавить виброотклик
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
   }
 
+  const handleRemoveFromCart = (indexToRemove) => {
+    setCart(cart.filter((_, index) => index !== indexToRemove));
+  }
+
+  const handleCheckout = () => {
+    alert("Checkout functionality coming soon!"); // Заглушка
+  }
+
+  // Считаем сумму для плашки
+  const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
+
+  // --- РЕНДЕР ПРОФИЛЯ ---
   const renderProfile = () => (
     <div className="pt-32 px-6 text-center animate-fade-in">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
-        {user?.photo_url ? (
-           <img src={user.photo_url} className="w-full h-full rounded-full" />
-        ) : (
-           <span>👤</span>
-        )}
+        {user?.photo_url ? <img src={user.photo_url} className="w-full h-full rounded-full" /> : <span>👤</span>}
       </div>
-      <h2 className="text-2xl font-black uppercase mb-2">
-        {user ? user.first_name : 'GUEST'}
-      </h2>
-      <p className="text-gray-500 font-mono text-xs mb-8">
-        @{user ? user.username : 'guest'}
-      </p>
+      <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'GUEST'}</h2>
+      <p className="text-gray-500 font-mono text-xs mb-8">@{user ? user.username : 'guest'}</p>
       <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-8">
         <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Your Balance</p>
         <div className="text-5xl font-mono font-bold tracking-tight">0.00 ₽</div>
@@ -101,10 +111,19 @@ function App() {
       </header>
 
       <main className="max-w-md mx-auto">
-        {/* --- ПОКАЗЫВАЕМ ЛИБО МАГАЗИН, ЛИБО ПРОДУКТ, ЛИБО ПРОФИЛЬ --- */}
         
-        {/* Если открыт продукт - показываем его поверх всего */}
-        {selectedProduct && (
+        {/* ЭКРАН КОРЗИНЫ (Поверх всего) */}
+        {isCartOpen && (
+          <Cart 
+            items={cart} 
+            onClose={() => setIsCartOpen(false)} 
+            onRemove={handleRemoveFromCart}
+            onCheckout={handleCheckout}
+          />
+        )}
+
+        {/* ЭКРАН ТОВАРА (Поверх магазина, но под корзиной) */}
+        {selectedProduct && !isCartOpen && (
           <ProductDetail 
             product={selectedProduct} 
             onBack={() => setSelectedProduct(null)} 
@@ -112,8 +131,8 @@ function App() {
           />
         )}
 
-        {/* Если продукт НЕ открыт и таб SHOP - показываем витрину */}
-        {!selectedProduct && activeTab === 'shop' && (
+        {/* ВИТРИНА */}
+        {!selectedProduct && !isCartOpen && activeTab === 'shop' && (
            <div className="animate-fade-in">
              <section className="pt-32 pb-12 px-6 flex flex-col items-center justify-center text-center border-b border-white/5">
                 <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
@@ -136,16 +155,12 @@ function App() {
                    {products.map((product) => (
                      <div 
                         key={product.id} 
-                        // --- ДОБАВИЛИ КЛИК ПО ТОВАРУ ---
                         onClick={() => setSelectedProduct(product)}
                         className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all"
                      >
                        <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
                           {product.image_url && (
-                            <img 
-                              src={product.image_url} 
-                              className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                            />
+                            <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>
                           )}
                        </div>
                        <div className="flex justify-between items-end">
@@ -153,9 +168,7 @@ function App() {
                            <h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3>
                            <p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p>
                          </div>
-                         <div className="text-lg font-mono font-bold">
-                           {product.price} ₽
-                         </div>
+                         <div className="text-lg font-mono font-bold">{product.price} ₽</div>
                        </div>
                        <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">
                          View Details
@@ -168,12 +181,30 @@ function App() {
            </div>
         )}
 
-        {/* Профиль показываем только если не выбран продукт и активен таб profile */}
-        {!selectedProduct && activeTab === 'profile' && renderProfile()}
+        {/* ПРОФИЛЬ */}
+        {!selectedProduct && !isCartOpen && activeTab === 'profile' && renderProfile()}
       </main>
 
-      {/* Меню скрываем, если открыт товар (чтобы не мешало) */}
-      {!selectedProduct && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
+      {/* --- FLOATING CART BAR (Появляется, если есть товары) --- */}
+      {!selectedProduct && !isCartOpen && cart.length > 0 && (
+        <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
+           <button 
+             onClick={() => setIsCartOpen(true)}
+             className="w-full bg-white text-black p-4 rounded-xl flex items-center justify-between shadow-xl active:scale-95 transition-all"
+           >
+             <div className="flex items-center gap-3">
+               <div className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">
+                 {cart.length}
+               </div>
+               <span className="font-bold text-sm uppercase tracking-wide">View Bag</span>
+             </div>
+             <span className="font-mono font-bold text-lg">{cartTotal} ₽</span>
+           </button>
+        </div>
+      )}
+
+      {/* Меню */}
+      {!selectedProduct && !isCartOpen && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
     </div>
   )
 }
