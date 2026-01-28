@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Loader } from 'lucide-react'
 import BottomNav from './BottomNav'
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
@@ -7,16 +8,26 @@ function App() {
   const [products, setProducts] = useState([])
   const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('shop')
+  const [isLoading, setIsLoading] = useState(true)
 
   // Загрузка данных при монтировании
   useEffect(() => {
     const initializeApp = async () => {
+      setIsLoading(true);
+      
       try {
         // Загружаем продукты
-        const productsResponse = await fetch(`${API_URL}/products/`);
+        console.log('🔄 Загрузка товаров с:', `${API_URL}/products`);
+        const productsResponse = await fetch(`${API_URL}/products`);
+        
+        console.log('📦 Статус ответа:', productsResponse.status);
+        
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
+          console.log('✅ Товары загружены:', productsData.length, 'шт.');
           setProducts(productsData);
+        } else {
+          console.error('❌ Ошибка загрузки товаров:', productsResponse.status, productsResponse.statusText);
         }
 
         // Автоматический вход пользователя (демо)
@@ -31,10 +42,15 @@ function App() {
 
         if (loginResponse.ok) {
           const userData = await loginResponse.json();
+          console.log('✅ Пользователь авторизован:', userData.username);
           setUser(userData);
+        } else {
+          console.error('❌ Ошибка авторизации:', loginResponse.status);
         }
       } catch (error) {
-        console.error('Error initializing app:', error);
+        console.error('❌ Критическая ошибка при инициализации:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -59,12 +75,20 @@ function App() {
       {/* Список продуктов */}
       <section className="px-6 py-8">
         <div className="max-w-md mx-auto space-y-4">
-          {products.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              <div className="text-4xl mb-4">🛍️</div>
+          {isLoading ? (
+            // Индикатор загрузки
+            <div className="text-center text-gray-400 py-12">
+              <Loader className="animate-spin mx-auto mb-4 text-white" size={48} />
               <p>Загрузка товаров...</p>
             </div>
+          ) : products.length === 0 ? (
+            // Нет товаров
+            <div className="text-center text-gray-500 py-12">
+              <div className="text-4xl mb-4">📦</div>
+              <p>Нет товаров</p>
+            </div>
           ) : (
+            // Список товаров
             products.map((product) => (
               <div
                 key={product.id}
