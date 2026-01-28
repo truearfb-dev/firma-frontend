@@ -1,145 +1,150 @@
 import { useState, useEffect } from 'react'
+import BottomNav from './BottomNav'
 
-// Твой сервер на Амвере
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
 function App() {
   const [products, setProducts] = useState([])
   const [user, setUser] = useState(null)
+  const [activeTab, setActiveTab] = useState('shop')
 
+  // Загрузка данных при монтировании
   useEffect(() => {
-    // 1. Инициализация Телеграма
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand(); // Разворачиваем на весь экран
+    const initializeApp = async () => {
+      try {
+        // Загружаем продукты
+        const productsResponse = await fetch(`${API_URL}/products/`);
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          setProducts(productsData);
+        }
 
-      // Безопасно достаем данные юзера
-      const userData = tg.initDataUnsafe?.user;
-      
-      if (userData) {
-        setUser(userData);
-        // 🔥 ГЛАВНОЕ: Отправляем данные на сервер (Тихая регистрация)
-        loginUser(userData);
+        // Автоматический вход пользователя (демо)
+        const loginResponse = await fetch(`${API_URL}/auth/login/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            username: 'testuser', 
+            password: 'testpass123' 
+          }),
+        });
+
+        if (loginResponse.ok) {
+          const userData = await loginResponse.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Error initializing app:', error);
       }
-    }
+    };
 
-    // 2. Загрузка товаров
-    fetch(`${API_URL}/products`)
-      .then(res => res.json())
-      .then(data => setProducts(data))
-      .catch(err => console.error("Ошибка загрузки товаров:", err))
-  }, [])
+    initializeApp();
+  }, []);
 
-  // Функция входа / регистрации
-  const loginUser = async (tgUser) => {
-    try {
-      const response = await fetch(`${API_URL}/auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          telegram_id: tgUser.id,
-          username: tgUser.username,
-          first_name: tgUser.first_name,
-          // Сюда потом добавим реферальный код (start_param)
-        }),
-      });
-      
-      const data = await response.json();
-      console.log("Login success:", data); // В консоли увидим ответ сервера
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  }
+  // Рендер магазина
+  const renderShop = () => (
+    <div className="animate-fade-in">
+      {/* Hero секция */}
+      <section className="pt-20 pb-12 px-6 text-center border-b border-white/10">
+        <div className="max-w-md mx-auto">
+          <h1 className="text-5xl font-black tracking-tighter uppercase mb-4 leading-none">
+            Premium<br />Quality
+          </h1>
+          <p className="text-sm text-gray-400 font-light tracking-wide">
+            Эксклюзивные товары для истинных ценителей
+          </p>
+        </div>
+      </section>
+
+      {/* Список продуктов */}
+      <section className="px-6 py-8">
+        <div className="max-w-md mx-auto space-y-4">
+          {products.length === 0 ? (
+            <div className="text-center text-gray-500 py-12">
+              <div className="text-4xl mb-4">🛍️</div>
+              <p>Загрузка товаров...</p>
+            </div>
+          ) : (
+            products.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white/5 border border-white/10 p-5 hover:bg-white/10 transition-all duration-300 group"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-bold uppercase tracking-wide text-sm mb-1 group-hover:text-white transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 line-clamp-2">
+                      {product.description}
+                    </p>
+                  </div>
+                  <div className="ml-4 text-right">
+                    <div className="text-xl font-mono font-bold">
+                      {product.price} ₽
+                    </div>
+                  </div>
+                </div>
+                
+                <button className="w-full bg-white/10 hover:bg-white hover:text-black border border-white/20 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                  Купить
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+
+  // Рендер профиля
+  const renderProfile = () => (
+    <div className="pt-32 px-6 text-center animate-fade-in">
+      <div className="max-w-md mx-auto">
+        <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl">
+          👤
+        </div>
+        <h2 className="text-2xl font-black uppercase mb-2">
+          {user?.first_name || 'GUEST'}
+        </h2>
+        <p className="text-gray-500 font-mono text-xs mb-8">
+          @{user?.username || 'guest'}
+        </p>
+
+        <div className="bg-white/5 border border-white/10 p-6 rounded-lg mb-8">
+          <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-2">
+            Your Balance
+          </p>
+          <div className="text-4xl font-mono font-bold">
+            {user?.balance || '0.00'} ₽
+          </div>
+        </div>
+
+        <button className="w-full bg-white text-black font-bold py-4 uppercase tracking-wider text-sm hover:bg-gray-200 transition-colors">
+          Invite Friend (+500₽)
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      
-      {/* HEADER */}
+    <div className="min-h-screen bg-black text-white font-sans pb-24">
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto">
           <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
-          <div className="text-xs font-mono text-gray-400">
-            {user ? `HI, ${user.first_name?.toUpperCase()}` : 'GUEST MODE'}
-          </div>
+          <div className="text-xs font-mono text-gray-400">V 2.0</div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="pt-32 pb-12 px-6 flex flex-col items-center justify-center text-center">
-        <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026 Collection</p>
-        <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">
-          SILENCE<br/><span className="text-gray-600">IS LOUD</span>
-        </h1>
-        <button className="bg-white text-black px-8 py-4 font-bold tracking-wider uppercase text-sm hover:bg-gray-200 transition-all">
-          Explore Drop
-        </button>
-      </section>
+      {/* Main Content */}
+      <main>
+        {activeTab === 'shop' && renderShop()}
+        {activeTab === 'profile' && renderProfile()}
+      </main>
 
-      {/* PRODUCTS GRID */}
-      <section className="px-4 pb-20 max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-2">
-          <h2 className="text-2xl font-bold tracking-tight">LATEST ARRIVALS</h2>
-          <span className="text-xs text-gray-500 font-mono">{products.length} ITEMS</span>
-        </div>
-
-        {products.length === 0 ? (
-           <div className="text-center py-20 text-gray-600 font-mono text-xs uppercase tracking-widest">
-             Loading / Database Empty
-           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-8">
-            {products.map((product) => (
-              <div key={product.id} className="group cursor-pointer">
-                <div className="aspect-square bg-[#111] mb-4 overflow-hidden relative">
-                   {product.image_url ? (
-                     <img 
-                       src={product.image_url} 
-                       alt={product.name}
-                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center text-gray-700 font-mono text-xs">
-                       NO IMAGE
-                     </div>
-                   )}
-                   {/* Бейджик, если товар не активен (для админа) */}
-                   {!product.is_active && (
-                     <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase">
-                       Sold Out
-                     </div>
-                   )}
-                </div>
-                
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-bold leading-none mb-1">{product.name}</h3>
-                    <p className="text-xs text-gray-500 font-mono uppercase">
-                      {product.brand ? product.brand.name : 'Firma Archive'}
-                    </p>
-                  </div>
-                  <span className="text-lg font-bold font-mono">
-                    {Math.floor(product.price).toLocaleString()} ₽
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* FOOTER */}
-      <footer className="py-12 border-t border-white/10 text-center">
-        <p className="text-[10px] text-gray-600 font-mono tracking-widest uppercase mb-4">
-          © 2026 FIRMA. All rights reserved.
-        </p>
-        <div className="flex justify-center gap-6 text-[10px] font-bold tracking-widest text-gray-400">
-           <span>INSTAGRAM</span>
-           <span>TELEGRAM</span>
-        </div>
-      </footer>
+      {/* Bottom Navigation */}
+      <BottomNav currentTab={activeTab} onChange={setActiveTab} />
     </div>
   )
 }
