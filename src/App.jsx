@@ -1,115 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, ArrowRight, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react'
 
-// Твой реальный адрес сервера
-const API_URL = "https://firmashop-truear.waw0.amvera.tech";
+function App() {
+  const [products, setProducts] = useState([])
+  // Состояние для хранения имени пользователя
+  const [user, setUser] = useState(null)
 
-export default function App() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Эта магия происходит при загрузке сайта
   useEffect(() => {
+    // 1. Инициализируем Телеграм
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    
+    // 2. Пробуем достать данные юзера
+    // (initDataUnsafe - это объект, который Телеграм отдает сразу)
+    if (tg.initDataUnsafe?.user) {
+      setUser(tg.initDataUnsafe.user)
+    }
+
+    // 3. Загружаем товары (как и раньше)
     fetch('https://firmashop-truear.waw0.amvera.tech/api/products')
       .then(res => res.json())
-      .then(data => {
-        console.log("Товары получены:", data);
-        setProducts(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Ошибка связи с сервером:", err);
-        setLoading(false);
-      });
-  }, []);
+      .then(data => setProducts(data))
+      .catch(err => console.error("Ошибка:", err))
+  }, [])
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      
       {/* HEADER */}
-      <nav className="fixed w-full z-50 mix-blend-difference px-6 py-6 flex justify-between items-center">
-        <div className="text-2xl font-bold tracking-tighter uppercase cursor-pointer">Firma</div>
-        
-        <div className="hidden md:flex gap-8 text-sm font-medium tracking-widest uppercase">
-          <a href="#" className="hover:underline underline-offset-4">Shop</a>
-          <a href="#" className="hover:underline underline-offset-4">Drop</a>
-          <a href="#" className="hover:underline underline-offset-4">About</a>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto">
+          <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
+          <div className="text-xs font-mono text-gray-400">
+            {/* Вот здесь магия: если юзер есть, пишем имя, иначе GUEST */}
+            {user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST MODE'}
+          </div>
         </div>
-
-        <div className="flex items-center gap-6">
-          <span className="hidden md:block text-sm font-medium tracking-widest uppercase cursor-pointer">Cart (0)</span>
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-      </nav>
-
-      {/* MOBILE MENU */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black flex flex-col items-center justify-center gap-8 text-2xl font-bold uppercase tracking-tighter">
-          <a href="#" onClick={() => setIsMenuOpen(false)}>Shop</a>
-          <a href="#" onClick={() => setIsMenuOpen(false)}>Drop</a>
-          <a href="#" onClick={() => setIsMenuOpen(false)}>Cart</a>
-        </div>
-      )}
+      </header>
 
       {/* HERO SECTION */}
-      <section className="h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black opacity-50 pointer-events-none" />
-        <p className="text-xs md:text-sm text-neutral-500 tracking-[0.3em] uppercase mb-4 animate-pulse">
-          Spring 2026 Collection
-        </p>
-        <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 leading-none">
-          SILENCE<br/>IS LOUD
+      <section className="pt-32 pb-12 px-6 flex flex-col items-center justify-center text-center">
+        <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026 Collection</p>
+        <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">
+          SILENCE<br/><span className="text-gray-600">IS LOUD</span>
         </h1>
-        <button className="bg-white text-black px-8 py-4 text-sm font-bold tracking-widest uppercase hover:bg-neutral-200 transition-colors">
+        <button className="bg-white text-black px-8 py-4 font-bold tracking-wider uppercase text-sm hover:bg-gray-200 transition-all">
           Explore Drop
         </button>
       </section>
 
       {/* PRODUCTS GRID */}
-      <section className="px-6 py-24 bg-black">
-        <div className="flex justify-between items-end mb-12 border-b border-neutral-800 pb-4">
-          <h2 className="text-3xl font-bold tracking-tighter uppercase">Latest Arrivals</h2>
-          <span className="text-neutral-500 text-sm tracking-widest">{products.length} ITEMS</span>
+      <section className="px-4 pb-20 max-w-md mx-auto">
+        <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-2">
+          <h2 className="text-2xl font-bold tracking-tight">LATEST ARRIVALS</h2>
+          <span className="text-xs text-gray-500 font-mono">{products.length} ITEMS</span>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-20 text-neutral-600 animate-spin">
-            <Loader2 size={40} />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-20 text-neutral-500 uppercase tracking-widest">
-            Sold Out / Database Empty
-          </div>
+        {products.length === 0 ? (
+           <div className="text-center py-20 text-gray-600 font-mono text-xs uppercase tracking-widest">
+             Loading / Database Empty
+           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-12">
+          <div className="grid grid-cols-1 gap-8">
             {products.map((product) => (
               <div key={product.id} className="group cursor-pointer">
-                <div className="aspect-[3/4] bg-neutral-900 mb-4 overflow-hidden relative">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 transform group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-700 font-bold text-6xl opacity-20 rotate-45">
-                      FIRMA
-                    </div>
-                  )}
-                  <div className="absolute top-4 right-4 bg-white text-black text-xs font-bold px-2 py-1 uppercase opacity-0 group-hover:opacity-100 transition-opacity">
-                    Quick Add
-                  </div>
+                {/* Image Container */}
+                <div className="aspect-square bg-[#111] mb-4 overflow-hidden relative">
+                   {product.image_url && (
+                     <img 
+                       src={product.image_url} 
+                       alt={product.name}
+                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                     />
+                   )}
+                   {!product.image_url && (
+                     <div className="w-full h-full flex items-center justify-center text-gray-700 font-mono text-xs">
+                       NO IMAGE
+                     </div>
+                   )}
                 </div>
+                
+                {/* Info */}
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-medium tracking-tight mb-1">{product.name}</h3>
-                    <p className="text-neutral-500 text-xs tracking-widest uppercase">
-                      {product.brand_id ? "FIRMA ARCHIVE" : "BASIC"}
+                    <h3 className="text-lg font-bold leading-none mb-1">{product.name}</h3>
+                    <p className="text-xs text-gray-500 font-mono uppercase">
+                      {product.brand ? product.brand.name : 'Firma Archive'}
                     </p>
                   </div>
-                  <span className="text-lg font-bold">{Number(product.price).toLocaleString()} ₽</span>
+                  <span className="text-lg font-bold font-mono">
+                    {Math.floor(product.price).toLocaleString()} ₽
+                  </span>
                 </div>
               </div>
             ))}
@@ -118,13 +98,17 @@ export default function App() {
       </section>
 
       {/* FOOTER */}
-      <footer className="px-6 py-12 border-t border-neutral-900 flex flex-col md:flex-row justify-between items-center text-neutral-600 text-xs tracking-widest uppercase">
-        <p>© 2026 FIRMA. All rights reserved.</p>
-        <div className="flex gap-6 mt-4 md:mt-0">
-          <a href="#" className="hover:text-white transition-colors">Instagram</a>
-          <a href="#" className="hover:text-white transition-colors">Telegram</a>
+      <footer className="py-12 border-t border-white/10 text-center">
+        <p className="text-[10px] text-gray-600 font-mono tracking-widest uppercase mb-4">
+          © 2026 FIRMA. All rights reserved.
+        </p>
+        <div className="flex justify-center gap-6 text-[10px] font-bold tracking-widest text-gray-400">
+           <span>INSTAGRAM</span>
+           <span>TELEGRAM</span>
         </div>
       </footer>
     </div>
-  );
+  )
 }
+
+export default App
