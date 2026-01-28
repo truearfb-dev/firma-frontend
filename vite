@@ -1,0 +1,285 @@
+
+9:48:03 PM [vite] (client) Re-optimizing dependencies beca
+9:48:03 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
+
+  VITE v7.3.1  ready in 928 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] 
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly 
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a sep
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with Post
+9:48:04 PM [vite] (client) Pre-transform error: [p] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and upda
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has mov package, so to continue using Tailwind CSS with PostCSS you
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+      drejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipeipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] 
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly 
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a sep
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so toh Post
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and upda
+9:48:04 PM [vite] (client) Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/App.css:undefined:NaN
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [s like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/App.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖ26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PMpostcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+      at lt (/Users/anocuments/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andre_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. Thed to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipirma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/zy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17) (x2)
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48ternal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/App.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/П_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/zy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:04 Pl server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modukov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:04 PM [vite] Internal server error: [postcss] It look
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:04 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/App.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firt/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/zy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:36 PM [vite] Internal server error: [postcss] It look
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:36 Pl server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      aDocuments/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:36 PM [vite] Internal al server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:36 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/App.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at cuments/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/l
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖy-result.js:436:17)
+9:48:38 PM [vite] Internal server error: [postcss] It look
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a Po
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/index.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modukov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
+9:48:38 PM [vite] Internal server error: [postcss] It look
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailte] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate p
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your
+9:48:38 PM [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/f
+  File: /Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/src/App.css:undefined:NaN
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FI
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38
+      at lt (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/tailwindcss/dist/lib.js:38:1643)
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Doc
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/
+      at LazyResult.runOnRoot (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Docu
+      at LazyResult.runAsync (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modulev/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at LazyResult.async (/Users/andrejarhipenkov/Documen
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/
+      at LazyResult.async (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:192:30)
+      at LazyResult.then (/Users/andrejarhipenkov/Document
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/l
+      at LazyResult.then (/Users/andrejarhipenkov/Documents/ПРОДЖЕКТ/FIRMA/firma-frontend/node_modules/postcss/lib/lazy-result.js:436:17)
