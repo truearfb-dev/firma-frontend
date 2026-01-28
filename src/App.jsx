@@ -11,7 +11,7 @@ export default function App() {
 
   // Эта магия происходит при загрузке сайта
   useEffect(() => {
-    fetch(`${API_URL}/api/products`)
+    fetch('https://firmashop-truear.waw0.amvera.tech/api/products')
       .then(res => res.json())
       .then(data => {
         console.log("Товары получены:", data);
