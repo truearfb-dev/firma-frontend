@@ -6,21 +6,26 @@ function App() {
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    // 1. Инициализируем Телеграм
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    
-    // 2. Пробуем достать данные юзера
-    // (initDataUnsafe - это объект, который Телеграм отдает сразу)
-    if (tg.initDataUnsafe?.user) {
-      setUser(tg.initDataUnsafe.user)
+    // --- НАЧАЛО БЕЗОПАСНОГО БЛОКА ---
+    // 1. Проверяем, существует ли объект Telegram
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      
+      // Пытаемся достать юзера (безопасно)
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        setUser(tg.initDataUnsafe.user);
+      }
+    } else {
+      console.log("Telegram SDK не найден. Запущен в обычном браузере?");
     }
+    // --- КОНЕЦ БЕЗОПАСНОГО БЛОКА ---
 
-    // 3. Загружаем товары (как и раньше)
+    // 2. Загружаем товары (это работает всегда)
     fetch('https://firmashop-truear.waw0.amvera.tech/api/products')
       .then(res => res.json())
       .then(data => setProducts(data))
-      .catch(err => console.error("Ошибка:", err))
+      .catch(err => console.error("Ошибка загрузки товаров:", err))
   }, [])
 
   return (
