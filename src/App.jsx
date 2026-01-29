@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Loader, CheckCircle, Copy } from 'lucide-react' // Добавил иконку Copy
+import { Loader, CheckCircle, Copy, Package } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
+import Orders from './Orders' // <--- Импорт Истории
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 // Замени на юзернейм своего бота (без @)
-const BOT_USERNAME = 'MyCasinoProject_bot'; 
+const BOT_USERNAME = 'firma_shop_bot'; 
 
 function App() {
   const [products, setProducts] = useState([])
@@ -18,9 +19,8 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false) // <--- Открыта ли история?
   const [orderSuccess, setOrderSuccess] = useState(false)
-
-  // Состояние для красивой кнопки "Скопировано!"
   const [inviteCopied, setInviteCopied] = useState(false)
 
   useEffect(() => {
@@ -29,11 +29,11 @@ function App() {
       tg.ready();
       tg.expand();
       const userData = tg.initDataUnsafe?.user;
-      const startParam = tg.initDataUnsafe?.start_param; // <--- ЛОВИМ РЕФЕРАЛКУ
+      const startParam = tg.initDataUnsafe?.start_param;
       
       if (userData) {
         setUser(userData);
-        loginUser(userData, startParam); // Передаем хвост
+        loginUser(userData, startParam);
       }
     }
 
@@ -58,7 +58,7 @@ function App() {
           telegram_id: tgUser.id,
           username: tgUser.username,
           first_name: tgUser.first_name,
-          start_param: startParam // Отправляем на бэкенд
+          start_param: startParam
         }),
       });
     } catch (error) {
@@ -66,27 +66,18 @@ function App() {
     }
   }
 
-  // --- ЛОГИКА ПРИГЛАШЕНИЯ ---
   const handleInvite = () => {
     if (!user) return;
-    
-    // Генерируем ссылку: t.me/bot_name/app?startapp=ref_12345
     const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.id}`;
-    
-    // Копируем в буфер
     navigator.clipboard.writeText(inviteLink).then(() => {
-      // Вибрация
       if (window.Telegram?.WebApp?.HapticFeedback) {
          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       }
-      // Показываем "Copied!" на 2 секунды
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2000);
     });
   }
 
-  // ... (Остальные функции: addToCart, checkout и т.д. БЕЗ ИЗМЕНЕНИЙ) ...
-  // Вставь их сюда из прошлого кода, или я могу прислать полный файл, если боишься ошибиться.
   const handleAddToCart = (product) => {
     setCart([...cart, product]); 
     setSelectedProduct(null); 
@@ -117,7 +108,6 @@ function App() {
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
-  // --- ЭКРАН УСПЕХА ---
   if (orderSuccess) {
       return (
           <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in text-center">
@@ -133,23 +123,29 @@ function App() {
       )
   }
 
-  // --- ПРОФИЛЬ С НОВОЙ КНОПКОЙ ---
   const renderProfile = () => (
-    <div className="pt-32 px-6 text-center animate-fade-in">
+    <div className="pt-32 px-6 text-center animate-fade-in pb-20">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
         {user?.photo_url ? <img src={user.photo_url} className="w-full h-full rounded-full" /> : <span>👤</span>}
       </div>
       <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'GUEST'}</h2>
       <p className="text-gray-500 font-mono text-xs mb-8">@{user ? user.username : 'guest'}</p>
       
-      {/* Баланс */}
-      <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-8">
+      <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-6">
         <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Your Balance</p>
         <div className="text-5xl font-mono font-bold tracking-tight">
-           {/* Здесь пока хардкод 0.00, потом научим обновлять */}
            {user?.balance || '0.00'} ₽ 
         </div>
       </div>
+
+      {/* КНОПКА MY ORDERS */}
+      <button 
+        onClick={() => setIsOrdersOpen(true)}
+        className="w-full bg-[#111] border border-white/10 text-white font-bold py-4 mb-3 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-[#222] transition-all"
+      >
+        <Package size={18} />
+        <span>My Orders</span>
+      </button>
 
       {/* КНОПКА ПРИГЛАШЕНИЯ */}
       <button 
@@ -170,9 +166,6 @@ function App() {
             </>
         )}
       </button>
-      <p className="mt-4 text-[10px] text-gray-500 max-w-xs mx-auto">
-         Share your link. When a friend joins, you get 50₽.
-      </p>
     </div>
   )
 
@@ -186,10 +179,18 @@ function App() {
       </header>
 
       <main className="max-w-md mx-auto">
+        {/* ЭКРАН ИСТОРИИ ЗАКАЗОВ */}
+        {isOrdersOpen && user && (
+          <Orders user={user} onClose={() => setIsOrdersOpen(false)} />
+        )}
+
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
-        {selectedProduct && !isCartOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         
-        {!selectedProduct && !isCartOpen && activeTab === 'shop' && (
+        {selectedProduct && !isCartOpen && !isOrdersOpen && (
+           <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />
+        )}
+        
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && (
            <div className="animate-fade-in">
              <section className="pt-32 pb-12 px-6 flex flex-col items-center justify-center text-center border-b border-white/5">
                 <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
@@ -219,10 +220,10 @@ function App() {
            </div>
         )}
 
-        {!selectedProduct && !isCartOpen && activeTab === 'profile' && renderProfile()}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
       </main>
 
-      {!selectedProduct && !isCartOpen && cart.length > 0 && (
+      {!selectedProduct && !isCartOpen && !isOrdersOpen && cart.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
            <button onClick={() => setIsCartOpen(true)} className="w-full bg-white text-black p-4 rounded-xl flex items-center justify-between shadow-xl active:scale-95 transition-all">
              <div className="flex items-center gap-3"><div className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">{cart.length}</div><span className="font-bold text-sm uppercase tracking-wide">View Bag</span></div>
@@ -231,7 +232,7 @@ function App() {
         </div>
       )}
 
-      {!selectedProduct && !isCartOpen && !orderSuccess && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
+      {!selectedProduct && !isCartOpen && !isOrdersOpen && !orderSuccess && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
     </div>
   )
 }
