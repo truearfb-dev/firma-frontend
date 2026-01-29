@@ -71,7 +71,9 @@ const Admin = ({ user }) => {
         setProductPrice('');
         setProductFile(null);
       } else {
-        alert("Error creating product");
+        // 🔥 ВАЖНО: Читаем текст ошибки от сервера
+        const errorData = await res.json();
+        alert("Error: " + (errorData.detail || "Unknown error"));
       }
     } catch (error) {
       console.error(error);
