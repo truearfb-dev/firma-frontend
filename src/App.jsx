@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package } from 'lucide-react'
+import { Loader, CheckCircle, Copy, Package, Heart } from 'lucide-react' // <--- Добавили Heart
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
 import Orders from './Orders'
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
-const BOT_USERNAME = 'firma_shop_bot'; // <-- Твой бот
+const BOT_USERNAME = 'firma_shop_bot'; 
 
 function App() {
   const [products, setProducts] = useState([])
@@ -17,12 +17,12 @@ function App() {
   // State
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
+  const [favorites, setFavorites] = useState([]) // <--- СПИСОК ЛАЙКОВ
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isOrdersOpen, setIsOrdersOpen] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
 
-  // НОВОЕ: Выбранная категория
   const [selectedCategory, setSelectedCategory] = useState('All')
 
   useEffect(() => {
@@ -36,6 +36,7 @@ function App() {
       if (userData) {
         setUser(userData);
         loginUser(userData, startParam);
+        fetchFavorites(userData.id); // <--- ЗАГРУЖАЕМ ЛАЙКИ ПРИ СТАРТЕ
       }
     }
 
@@ -45,10 +46,7 @@ function App() {
         setProducts(data);
         setIsLoading(false);
       })
-      .catch(err => {
-        console.error("Ошибка:", err);
-        setIsLoading(false);
-      })
+      .catch(err => console.error("Ошибка:", err))
   }, [])
 
   const loginUser = async (tgUser, startParam) => {
@@ -63,27 +61,64 @@ function App() {
           start_param: startParam
         }),
       });
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error) { console.error("Login failed:", error); }
+  }
+
+  // --- ЛОГИКА ЛАЙКОВ ---
+  const fetchFavorites = async (tgId) => {
+    try {
+      const res = await fetch(`${API_URL}/favorites/${tgId}`);
+      const data = await res.json();
+      setFavorites(data); // Придет массив [1, 5, 8]
+    } catch (error) { console.error("Fav load error:", error); }
+  }
+
+  const handleToggleFavorite = async (e, productId) => {
+    e.stopPropagation(); // <--- ВАЖНО: Чтобы не открывалась карточка товара
+    
+    // 1. Оптимистичное обновление (сразу меняем цвет, не ждем сервера)
+    const isLiked = favorites.includes(productId);
+    if (isLiked) {
+      setFavorites(favorites.filter(id => id !== productId));
+    } else {
+      setFavorites([...favorites, productId]);
+    }
+
+    // 2. Вибрация
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
+
+    // 3. Отправка на сервер
+    if (user) {
+      try {
+        await fetch(`${API_URL}/favorites/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegram_id: user.id, product_id: productId })
+        });
+      } catch (error) { console.error("Like error:", error); }
     }
   }
 
-  // --- ЛОГИКА ФИЛЬТРАЦИИ ---
-  
-  // 1. Вычисляем уникальные категории из товаров
+  // --- ФИЛЬТРАЦИЯ ---
   const categories = useMemo(() => {
-    const allCats = products.map(p => p.category).filter(Boolean); // Собираем все непустые категории
-    return ['All', ...new Set(allCats)]; // Убираем дубликаты и добавляем 'All'
+    const allCats = products.map(p => p.category).filter(Boolean);
+    // Добавляем 'Favorites' в список категорий
+    return ['All', 'Favorites', ...new Set(allCats)];
   }, [products]);
 
-  // 2. Фильтруем товары
   const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'Favorites') {
+       // Показываем только то, что в списке favorites
+       return products.filter(p => favorites.includes(p.id));
+    }
     if (selectedCategory === 'All') return products;
     return products.filter(p => p.category === selectedCategory);
-  }, [products, selectedCategory]);
+  }, [products, selectedCategory, favorites]);
 
 
-  // ... (Остальные функции handleInvite, handleAddToCart и т.д. без изменений) ...
+  // ... Остальные функции ...
   const handleInvite = () => {
     if (!user) return;
     const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.id}`;
@@ -165,54 +200,70 @@ function App() {
         
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && (
            <div className="animate-fade-in">
-             {/* HERO Секция */}
              <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
                 <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
                 <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
              </section>
 
-             {/* 🔥 ФИЛЬТРЫ КАТЕГОРИЙ */}
-             {categories.length > 1 && (
-               <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
-                 <div className="flex gap-2 justify-center min-w-max">
-                   {categories.map(cat => (
-                     <button
-                       key={cat}
-                       onClick={() => setSelectedCategory(cat)}
-                       className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
-                         selectedCategory === cat 
-                           ? 'bg-white text-black border-white' 
-                           : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
-                       }`}
-                     >
-                       {cat}
-                     </button>
-                   ))}
-                 </div>
+             {/* ФИЛЬТРЫ + FAVORITES */}
+             <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
+               <div className="flex gap-2 justify-center min-w-max">
+                 {categories.map(cat => (
+                   <button
+                     key={cat}
+                     onClick={() => setSelectedCategory(cat)}
+                     className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                       selectedCategory === cat 
+                         ? 'bg-white text-black border-white' 
+                         : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
+                     }`}
+                   >
+                     {cat === 'Favorites' ? `♥ Favorites` : cat} 
+                   </button>
+                 ))}
                </div>
-             )}
+             </div>
 
-             {/* СПИСОК ТОВАРОВ (Фильтрованный) */}
              <section className="px-4 pb-8">
                {isLoading ? (
                  <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Drop...</span></div>
                ) : (
                  <div className="grid grid-cols-1 gap-6">
-                   {filteredProducts.map((product) => (
-                     <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all">
-                       <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
-                          {product.image_url && <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
+                   {filteredProducts.map((product) => {
+                     // Проверяем, лайкнут ли этот товар
+                     const isLiked = favorites.includes(product.id);
+                     
+                     return (
+                       <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
+                         
+                         {/* 🔥 КНОПКА ЛАЙКА (Абсолютное позиционирование) */}
+                         <button 
+                            onClick={(e) => handleToggleFavorite(e, product.id)}
+                            className="absolute top-6 right-6 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all"
+                         >
+                            <Heart 
+                                size={18} 
+                                className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} 
+                            />
+                         </button>
+
+                         <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
+                            {product.image_url && <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
+                         </div>
+                         <div className="flex justify-between items-end">
+                           <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
+                           <div className="text-lg font-mono font-bold">{product.price} ₽</div>
+                         </div>
+                         <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">View Details</button>
                        </div>
-                       <div className="flex justify-between items-end">
-                         <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
-                         <div className="text-lg font-mono font-bold">{product.price} ₽</div>
-                       </div>
-                       <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">View Details</button>
-                     </div>
-                   ))}
-                   {/* Если товаров в категории нет */}
+                     )
+                   })}
+                   
+                   {/* Пустое состояние */}
                    {filteredProducts.length === 0 && (
-                     <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">No items in {selectedCategory}</div>
+                     <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">
+                        {selectedCategory === 'Favorites' ? "No favorites yet" : `No items in ${selectedCategory}`}
+                     </div>
                    )}
                  </div>
                )}
