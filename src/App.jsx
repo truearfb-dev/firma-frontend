@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Loader, CheckCircle, Copy, Package } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
-import Orders from './Orders' // <--- Импорт Истории
+import Orders from './Orders'
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
-// Замени на юзернейм своего бота (без @)
-const BOT_USERNAME = 'firma_shop_bot'; 
+const BOT_USERNAME = 'firma_shop_bot'; // <-- Твой бот
 
 function App() {
   const [products, setProducts] = useState([])
@@ -19,9 +18,12 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isOrdersOpen, setIsOrdersOpen] = useState(false) // <--- Открыта ли история?
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
+
+  // НОВОЕ: Выбранная категория
+  const [selectedCategory, setSelectedCategory] = useState('All')
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -66,13 +68,27 @@ function App() {
     }
   }
 
+  // --- ЛОГИКА ФИЛЬТРАЦИИ ---
+  
+  // 1. Вычисляем уникальные категории из товаров
+  const categories = useMemo(() => {
+    const allCats = products.map(p => p.category).filter(Boolean); // Собираем все непустые категории
+    return ['All', ...new Set(allCats)]; // Убираем дубликаты и добавляем 'All'
+  }, [products]);
+
+  // 2. Фильтруем товары
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'All') return products;
+    return products.filter(p => p.category === selectedCategory);
+  }, [products, selectedCategory]);
+
+
+  // ... (Остальные функции handleInvite, handleAddToCart и т.д. без изменений) ...
   const handleInvite = () => {
     if (!user) return;
     const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.id}`;
     navigator.clipboard.writeText(inviteLink).then(() => {
-      if (window.Telegram?.WebApp?.HapticFeedback) {
-         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-      }
+      if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2000);
     });
@@ -81,9 +97,7 @@ function App() {
   const handleAddToCart = (product) => {
     setCart([...cart, product]); 
     setSelectedProduct(null); 
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
   }
 
   const handleRemoveFromCart = (indexToRemove) => {
@@ -113,12 +127,8 @@ function App() {
           <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in text-center">
               <CheckCircle size={64} className="text-white mb-6" />
               <h1 className="text-4xl font-black uppercase mb-4 tracking-tighter">Order<br/>Confirmed</h1>
-              <p className="text-gray-400 font-mono text-xs max-w-xs mb-12">
-                  Ваш заказ принят. Скоро свяжемся.
-              </p>
-              <button onClick={() => setOrderSuccess(false)} className="bg-white text-black px-8 py-4 font-bold uppercase tracking-wider text-sm rounded-lg w-full max-w-xs">
-                  Continue Shopping
-              </button>
+              <p className="text-gray-400 font-mono text-xs max-w-xs mb-12">Ваш заказ принят. Скоро свяжемся.</p>
+              <button onClick={() => setOrderSuccess(false)} className="bg-white text-black px-8 py-4 font-bold uppercase tracking-wider text-sm rounded-lg w-full max-w-xs">Continue Shopping</button>
           </div>
       )
   }
@@ -130,42 +140,12 @@ function App() {
       </div>
       <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'GUEST'}</h2>
       <p className="text-gray-500 font-mono text-xs mb-8">@{user ? user.username : 'guest'}</p>
-      
       <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-6">
         <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Your Balance</p>
-        <div className="text-5xl font-mono font-bold tracking-tight">
-           {user?.balance || '0.00'} ₽ 
-        </div>
+        <div className="text-5xl font-mono font-bold tracking-tight">{user?.balance || '0.00'} ₽</div>
       </div>
-
-      {/* КНОПКА MY ORDERS */}
-      <button 
-        onClick={() => setIsOrdersOpen(true)}
-        className="w-full bg-[#111] border border-white/10 text-white font-bold py-4 mb-3 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-[#222] transition-all"
-      >
-        <Package size={18} />
-        <span>My Orders</span>
-      </button>
-
-      {/* КНОПКА ПРИГЛАШЕНИЯ */}
-      <button 
-        onClick={handleInvite}
-        className={`w-full font-bold py-4 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 transition-all ${
-           inviteCopied ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'
-        }`}
-      >
-        {inviteCopied ? (
-            <>
-              <CheckCircle size={18} />
-              <span>Link Copied!</span>
-            </>
-        ) : (
-            <>
-              <Copy size={18} />
-              <span>Invite Friend (+50₽)</span>
-            </>
-        )}
-      </button>
+      <button onClick={() => setIsOrdersOpen(true)} className="w-full bg-[#111] border border-white/10 text-white font-bold py-4 mb-3 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-[#222] transition-all"><Package size={18} /><span>My Orders</span></button>
+      <button onClick={handleInvite} className={`w-full font-bold py-4 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 transition-all ${inviteCopied ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'}`}>{inviteCopied ? <><CheckCircle size={18} /><span>Link Copied!</span></> : <><Copy size={18} /><span>Invite Friend (+50₽)</span></>}</button>
     </div>
   )
 
@@ -179,30 +159,46 @@ function App() {
       </header>
 
       <main className="max-w-md mx-auto">
-        {/* ЭКРАН ИСТОРИИ ЗАКАЗОВ */}
-        {isOrdersOpen && user && (
-          <Orders user={user} onClose={() => setIsOrdersOpen(false)} />
-        )}
-
+        {isOrdersOpen && user && <Orders user={user} onClose={() => setIsOrdersOpen(false)} />}
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
-        
-        {selectedProduct && !isCartOpen && !isOrdersOpen && (
-           <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />
-        )}
+        {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && (
            <div className="animate-fade-in">
-             <section className="pt-32 pb-12 px-6 flex flex-col items-center justify-center text-center border-b border-white/5">
+             {/* HERO Секция */}
+             <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
                 <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
                 <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
-                <p className="text-gray-400 text-sm max-w-xs mx-auto mb-8 font-light">Эксклюзивные товары для истинных ценителей</p>
              </section>
-             <section className="px-4 py-8">
+
+             {/* 🔥 ФИЛЬТРЫ КАТЕГОРИЙ */}
+             {categories.length > 1 && (
+               <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
+                 <div className="flex gap-2 justify-center min-w-max">
+                   {categories.map(cat => (
+                     <button
+                       key={cat}
+                       onClick={() => setSelectedCategory(cat)}
+                       className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                         selectedCategory === cat 
+                           ? 'bg-white text-black border-white' 
+                           : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
+                       }`}
+                     >
+                       {cat}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+             )}
+
+             {/* СПИСОК ТОВАРОВ (Фильтрованный) */}
+             <section className="px-4 pb-8">
                {isLoading ? (
                  <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Drop...</span></div>
                ) : (
                  <div className="grid grid-cols-1 gap-6">
-                   {products.map((product) => (
+                   {filteredProducts.map((product) => (
                      <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all">
                        <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
                           {product.image_url && <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
@@ -214,6 +210,10 @@ function App() {
                        <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">View Details</button>
                      </div>
                    ))}
+                   {/* Если товаров в категории нет */}
+                   {filteredProducts.length === 0 && (
+                     <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">No items in {selectedCategory}</div>
+                   )}
                  </div>
                )}
              </section>
