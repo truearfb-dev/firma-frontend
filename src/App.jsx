@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package, Heart, X, Search } from 'lucide-react' // <--- Добавили Search
+import { Loader, CheckCircle, Copy, Package, Heart, X, Search } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
 import Orders from './Orders'
 import Community from './Community'
+import Admin from './Admin' // <--- Импорт админки
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 const BOT_USERNAME = 'firma_shop_bot'; 
@@ -16,6 +17,9 @@ function App() {
   const [activeTab, setActiveTab] = useState('shop')
   const [isLoading, setIsLoading] = useState(true)
   
+  // 🔥 ADMIN STATE
+  const [isAdmin, setIsAdmin] = useState(false)
+
   // State
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
@@ -28,7 +32,6 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedBrand, setSelectedBrand] = useState(null)
   
-  // 🔥 НОВЫЕ СОСТОЯНИЯ ПОИСКА
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -63,7 +66,7 @@ function App() {
 
   const loginUser = async (tgUser, startParam) => {
     try {
-      await fetch(`${API_URL}/auth`, {
+      const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,6 +76,15 @@ function App() {
           start_param: startParam
         }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        // 🔥 ПРОВЕРЯЕМ: АДМИН ЛИ ЭТО?
+        if (data.is_admin) {
+            setIsAdmin(true);
+        }
+        // Обновляем баланс юзера
+        setUser(prev => ({...prev, ...data}));
+      }
     } catch (error) { console.error("Login failed:", error); }
   }
 
@@ -136,7 +148,7 @@ function App() {
     } catch (error) { console.error(error); }
   }
 
-  // --- ФИЛЬТРАЦИЯ (ТЕПЕРЬ С ПОИСКОМ) ---
+  // --- ФИЛЬТРАЦИЯ ---
   const categories = useMemo(() => {
     const allCats = products.map(p => p.category).filter(Boolean);
     return ['All', 'Favorites', ...new Set(allCats)];
@@ -144,8 +156,6 @@ function App() {
 
   const filteredProducts = useMemo(() => {
     let result = products;
-
-    // 1. Поиск (самый главный)
     if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         result = result.filter(p => 
@@ -153,21 +163,16 @@ function App() {
             (p.brand && p.brand.name.toLowerCase().includes(query))
         );
     }
-
-    // 2. Бренд
     if (selectedBrand) {
         result = result.filter(p => p.brand_id === selectedBrand.id);
     }
-
-    // 3. Категория / Избранное
     if (selectedCategory === 'Favorites') {
        result = result.filter(p => favorites.includes(p.id));
     } else if (selectedCategory !== 'All') {
        result = result.filter(p => p.category === selectedCategory);
     }
-
     return result;
-  }, [products, selectedCategory, favorites, selectedBrand, searchQuery]); // <--- Добавили searchQuery в зависимости
+  }, [products, selectedCategory, favorites, selectedBrand, searchQuery]);
 
 
   const handleInvite = () => {
@@ -188,6 +193,14 @@ function App() {
       </div>
       <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'GUEST'}</h2>
       <p className="text-gray-500 font-mono text-xs mb-8">@{user ? user.username : 'guest'}</p>
+      
+      {/* 🔥 ADMIN BADGE 🔥 */}
+      {isAdmin && (
+        <div className="inline-block px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full text-red-500 text-[10px] font-bold uppercase tracking-widest mb-6">
+            Admin Access Granted
+        </div>
+      )}
+
       <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-6">
         <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Your Balance</p>
         <div className="text-5xl font-mono font-bold tracking-tight">{user?.balance || '0.00'} ₽</div>
@@ -211,8 +224,6 @@ function App() {
   // --- ГЛАВНЫЙ РЕНДЕР SHOP ---
   const renderShop = () => (
     <div className="animate-fade-in">
-        
-        {/* HERO (Скрываем при поиске, чтобы не мешал) */}
         {!searchQuery && (
           <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
@@ -229,37 +240,21 @@ function App() {
             )}
           </section>
         )}
-
-        {/* Если поиск активен, делаем отступ сверху, чтобы товары не налезли на шапку */}
         {searchQuery && <div className="h-32"></div>}
-
-        {/* КАРУСЕЛЬ БРЕНДОВ (Скрываем при поиске или если выбран бренд) */}
         {!searchQuery && !selectedBrand && brands.length > 0 && (
           <div className="px-4 mb-10 overflow-x-auto no-scrollbar">
              <div className="flex gap-4 justify-start min-w-max px-2">
                 {brands.map(brand => (
-                    <div 
-                        key={brand.id} 
-                        onClick={() => setSelectedBrand(brand)}
-                        className="flex flex-col items-center gap-2 cursor-pointer group"
-                    >
+                    <div key={brand.id} onClick={() => setSelectedBrand(brand)} className="flex flex-col items-center gap-2 cursor-pointer group">
                         <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden group-active:scale-90 transition-all">
-                            {brand.logo_url ? (
-                                <img src={brand.logo_url} className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>
-                            )}
+                            {brand.logo_url ? <img src={brand.logo_url} className="w-full h-full object-cover" /> : <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>}
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">
-                            {brand.name}
-                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{brand.name}</span>
                     </div>
                 ))}
              </div>
           </div>
         )}
-
-        {/* ФИЛЬТРЫ КАТЕГОРИЙ (Скрываем при поиске) */}
         {!searchQuery && (
           <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
             <div className="flex gap-2 justify-center min-w-max">
@@ -271,8 +266,6 @@ function App() {
             </div>
           </div>
         )}
-
-        {/* СПИСОК ТОВАРОВ */}
         <section className="px-4 pb-8">
         {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Drop...</span></div>
@@ -297,9 +290,7 @@ function App() {
                 )
             })}
             {filteredProducts.length === 0 && (
-                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">
-                    {searchQuery ? `No results for "${searchQuery}"` : "No items found"}
-                </div>
+                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{searchQuery ? `No results for "${searchQuery}"` : "No items found"}</div>
             )}
             </div>
         )}
@@ -309,45 +300,20 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-white selection:text-black">
-      
-      {/* 🔥 HEADER С ПОИСКОМ 🔥 */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
         <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto h-16">
-          
           {isSearchOpen ? (
-            // РЕЖИМ ПОИСКА
             <div className="flex items-center w-full gap-2 animate-fade-in">
                 <Search size={20} className="text-gray-500" />
-                <input 
-                    autoFocus
-                    type="text" 
-                    placeholder="Search products..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600"
-                />
-                <button 
-                    onClick={() => {
-                        setIsSearchOpen(false);
-                        setSearchQuery('');
-                    }}
-                    className="p-2"
-                >
-                    <X size={20} className="text-white"/>
-                </button>
+                <input autoFocus type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600"/>
+                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-2"><X size={20} className="text-white"/></button>
             </div>
           ) : (
-            // ОБЫЧНЫЙ РЕЖИМ
             <>
               <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
               <div className="flex items-center gap-4">
-                  {/* Кнопка открытия поиска */}
-                  <button onClick={() => setIsSearchOpen(true)} className="text-white hover:text-gray-300">
-                      <Search size={20} />
-                  </button>
-                  <div className="text-xs font-mono text-gray-400">
-                      {user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST'}
-                  </div>
+                  <button onClick={() => setIsSearchOpen(true)} className="text-white hover:text-gray-300"><Search size={20} /></button>
+                  <div className="text-xs font-mono text-gray-400">{user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST'}</div>
               </div>
             </>
           )}
@@ -360,9 +326,13 @@ function App() {
         {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
-        
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (<Community user={user} />)}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
+        
+        {/* 🔥 РЕНДЕР АДМИНКИ 🔥 */}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (
+            <Admin user={user} />
+        )}
       </main>
 
       {!selectedProduct && !isCartOpen && !isOrdersOpen && cart.length > 0 && (
@@ -374,7 +344,9 @@ function App() {
         </div>
       )}
 
-      {!selectedProduct && !isCartOpen && !isOrdersOpen && !orderSuccess && <BottomNav currentTab={activeTab} onChange={setActiveTab} />}
+      {!selectedProduct && !isCartOpen && !isOrdersOpen && !orderSuccess && (
+         <BottomNav currentTab={activeTab} onChange={setActiveTab} isAdmin={isAdmin} /> 
+      )}
     </div>
   )
 }
