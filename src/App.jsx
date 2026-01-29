@@ -5,9 +5,11 @@ import ProductDetail from './ProductDetail'
 import Cart from './Cart'
 import Orders from './Orders'
 import Community from './Community'
-import Admin from './Admin' // <--- Импорт админки
+import Admin from './Admin'
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
+// 🔥 ВАЖНО: Разделяем Базовый URL и API
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech';
+const API_URL = `${BASE_URL}/api`;
 const BOT_USERNAME = 'firma_shop_bot'; 
 
 function App() {
@@ -16,11 +18,7 @@ function App() {
   const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('shop')
   const [isLoading, setIsLoading] = useState(true)
-  
-  // 🔥 ADMIN STATE
   const [isAdmin, setIsAdmin] = useState(false)
-
-  // State
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
   const [favorites, setFavorites] = useState([])
@@ -28,12 +26,17 @@ function App() {
   const [isOrdersOpen, setIsOrdersOpen] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
-
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedBrand, setSelectedBrand] = useState(null)
-  
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // 🖼 Функция для картинок (лечит битые ссылки)
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url; // Если это полная ссылка - ок
+    return `${BASE_URL}${url}`; // Если это /static... - добавляем домен
+  }
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -42,22 +45,16 @@ function App() {
       tg.expand();
       const userData = tg.initDataUnsafe?.user;
       const startParam = tg.initDataUnsafe?.start_param;
-      
       if (userData) {
         setUser(userData);
         loginUser(userData, startParam);
         fetchFavorites(userData.id);
       }
     }
-
     fetch(`${API_URL}/products`)
       .then(res => res.json())
-      .then(data => {
-        setProducts(data);
-        setIsLoading(false);
-      })
+      .then(data => { setProducts(data); setIsLoading(false); })
       .catch(err => console.error("Ошибка:", err))
-
     fetch(`${API_URL}/brands`)
       .then(res => res.json())
       .then(data => setBrands(data))
@@ -78,11 +75,7 @@ function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        // 🔥 ПРОВЕРЯЕМ: АДМИН ЛИ ЭТО?
-        if (data.is_admin) {
-            setIsAdmin(true);
-        }
-        // Обновляем баланс юзера
+        if (data.is_admin) setIsAdmin(true);
         setUser(prev => ({...prev, ...data}));
       }
     } catch (error) { console.error("Login failed:", error); }
@@ -148,7 +141,6 @@ function App() {
     } catch (error) { console.error(error); }
   }
 
-  // --- ФИЛЬТРАЦИЯ ---
   const categories = useMemo(() => {
     const allCats = products.map(p => p.category).filter(Boolean);
     return ['All', 'Favorites', ...new Set(allCats)];
@@ -174,7 +166,6 @@ function App() {
     return result;
   }, [products, selectedCategory, favorites, selectedBrand, searchQuery]);
 
-
   const handleInvite = () => {
     if (!user) return;
     const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.id}`;
@@ -193,14 +184,7 @@ function App() {
       </div>
       <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'GUEST'}</h2>
       <p className="text-gray-500 font-mono text-xs mb-8">@{user ? user.username : 'guest'}</p>
-      
-      {/* 🔥 ADMIN BADGE 🔥 */}
-      {isAdmin && (
-        <div className="inline-block px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full text-red-500 text-[10px] font-bold uppercase tracking-widest mb-6">
-            Admin Access Granted
-        </div>
-      )}
-
+      {isAdmin && <div className="inline-block px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full text-red-500 text-[10px] font-bold uppercase tracking-widest mb-6">Admin Access Granted</div>}
       <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-6">
         <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Your Balance</p>
         <div className="text-5xl font-mono font-bold tracking-tight">{user?.balance || '0.00'} ₽</div>
@@ -221,7 +205,6 @@ function App() {
     )
   }
 
-  // --- ГЛАВНЫЙ РЕНДЕР SHOP ---
   const renderShop = () => (
     <div className="animate-fade-in">
         {!searchQuery && (
@@ -273,13 +256,15 @@ function App() {
             <div className="grid grid-cols-1 gap-6">
             {filteredProducts.map((product) => {
                 const isLiked = favorites.includes(product.id);
+                // 🔥 ИСПОЛЬЗУЕМ УМНУЮ ФУНКЦИЮ
+                const imgUrl = getImageUrl(product.image_url);
                 return (
                 <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
                     <button onClick={(e) => handleToggleFavorite(e, product.id)} className="absolute top-6 right-6 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all">
                         <Heart size={18} className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
                     </button>
                     <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
-                    {product.image_url && <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
+                      {imgUrl && <img src={imgUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
                     </div>
                     <div className="flex justify-between items-end">
                     <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
@@ -319,22 +304,15 @@ function App() {
           )}
         </div>
       </header>
-
       <main className="max-w-md mx-auto">
         {isOrdersOpen && user && <Orders user={user} onClose={() => setIsOrdersOpen(false)} />}
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
         {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
-        
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (<Community user={user} />)}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
-        
-        {/* 🔥 РЕНДЕР АДМИНКИ 🔥 */}
-        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (
-            <Admin user={user} />
-        )}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (<Admin user={user} />)}
       </main>
-
       {!selectedProduct && !isCartOpen && !isOrdersOpen && cart.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
            <button onClick={() => setIsCartOpen(true)} className="w-full bg-white text-black p-4 rounded-xl flex items-center justify-between shadow-xl active:scale-95 transition-all">
@@ -343,7 +321,6 @@ function App() {
            </button>
         </div>
       )}
-
       {!selectedProduct && !isCartOpen && !isOrdersOpen && !orderSuccess && (
          <BottomNav currentTab={activeTab} onChange={setActiveTab} isAdmin={isAdmin} /> 
       )}

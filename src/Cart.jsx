@@ -1,12 +1,19 @@
 import React from 'react';
 import { X, Trash2, ArrowRight } from 'lucide-react';
 
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech';
+
 const Cart = ({ items, onClose, onRemove, onCheckout }) => {
   const total = items.reduce((sum, item) => sum + item.price, 0);
 
+  // 🖼 Умная функция внутри компонента (или можно вынести)
+  const getImgUrl = (url) => {
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+  }
+
   return (
     <div className="fixed inset-0 z-[70] bg-black animate-fade-in flex flex-col pb-safe">
-      
       <div className="px-6 py-4 flex items-center justify-between border-b border-white/10">
         <h2 className="text-xl font-black uppercase tracking-tighter">Your Bag ({items.length})</h2>
         <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all">
@@ -24,7 +31,8 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
           items.map((item, index) => (
             <div key={`${item.id}-${index}`} className="flex gap-4 animate-slide-up">
               <div className="w-20 h-24 bg-[#111] rounded-lg overflow-hidden shrink-0">
-                <img src={item.image_url} className="w-full h-full object-cover" />
+                {/* Исправленная картинка */}
+                <img src={getImgUrl(item.image_url)} className="w-full h-full object-cover" />
               </div>
               
               <div className="flex-1 flex flex-col justify-between py-1">
@@ -34,8 +42,6 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
                     <p className="text-[10px] text-gray-500 font-mono uppercase">
                         {item.brand ? item.brand.name : 'Firma'}
                     </p>
-                    
-                    {/* 🔥 ПОКАЗЫВАЕМ РАЗМЕР 🔥 */}
                     {item.selectedSize && (
                         <span className="self-start px-2 py-0.5 bg-white/10 rounded text-[10px] font-bold text-white">
                             Size: {item.selectedSize}
