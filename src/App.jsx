@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package, Heart, X } from 'lucide-react'
+import { Loader, CheckCircle, Copy, Package, Heart, X, Search } from 'lucide-react' // <--- Добавили Search
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
@@ -11,7 +11,7 @@ const BOT_USERNAME = 'firma_shop_bot';
 
 function App() {
   const [products, setProducts] = useState([])
-  const [brands, setBrands] = useState([]) // <--- БРЕНДЫ
+  const [brands, setBrands] = useState([]) 
   const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('shop')
   const [isLoading, setIsLoading] = useState(true)
@@ -26,7 +26,11 @@ function App() {
   const [inviteCopied, setInviteCopied] = useState(false)
 
   const [selectedCategory, setSelectedCategory] = useState('All')
-  const [selectedBrand, setSelectedBrand] = useState(null) // <--- ВЫБРАННЫЙ БРЕНД
+  const [selectedBrand, setSelectedBrand] = useState(null)
+  
+  // 🔥 НОВЫЕ СОСТОЯНИЯ ПОИСКА
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -43,7 +47,6 @@ function App() {
       }
     }
 
-    // Загрузка товаров
     fetch(`${API_URL}/products`)
       .then(res => res.json())
       .then(data => {
@@ -52,7 +55,6 @@ function App() {
       })
       .catch(err => console.error("Ошибка:", err))
 
-    // Загрузка брендов
     fetch(`${API_URL}/brands`)
       .then(res => res.json())
       .then(data => setBrands(data))
@@ -104,9 +106,7 @@ function App() {
     }
   }
 
-  // --- ЛОГИКА КОРЗИНЫ С РАЗМЕРАМИ ---
   const handleAddToCart = (product, size) => {
-    // Добавляем в объект товара поле selectedSize
     const itemToAdd = { ...product, selectedSize: size };
     setCart([...cart, itemToAdd]); 
     setSelectedProduct(null); 
@@ -117,16 +117,12 @@ function App() {
     setCart(cart.filter((_, index) => index !== indexToRemove));
   }
 
-  // 🔥 ОБНОВЛЕННЫЙ ЧЕКАУТ (ШЛЕМ РАЗМЕРЫ)
   const handleCheckout = async () => {
     if (!user) { alert("Ошибка: Нет юзера"); return; }
-    
-    // Формируем payload: [{ product_id: 1, size: "M" }, ...]
     const orderItems = cart.map(item => ({
         product_id: item.id,
-        size: item.selectedSize || null // Если размера нет, шлем null
+        size: item.selectedSize || null
     }));
-
     try {
         const response = await fetch(`${API_URL}/orders`, {
             method: 'POST',
@@ -140,7 +136,7 @@ function App() {
     } catch (error) { console.error(error); }
   }
 
-  // --- ФИЛЬТРАЦИЯ ---
+  // --- ФИЛЬТРАЦИЯ (ТЕПЕРЬ С ПОИСКОМ) ---
   const categories = useMemo(() => {
     const allCats = products.map(p => p.category).filter(Boolean);
     return ['All', 'Favorites', ...new Set(allCats)];
@@ -149,12 +145,21 @@ function App() {
   const filteredProducts = useMemo(() => {
     let result = products;
 
-    // 1. Фильтр по Бренду
+    // 1. Поиск (самый главный)
+    if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        result = result.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            (p.brand && p.brand.name.toLowerCase().includes(query))
+        );
+    }
+
+    // 2. Бренд
     if (selectedBrand) {
         result = result.filter(p => p.brand_id === selectedBrand.id);
     }
 
-    // 2. Фильтр по Категории / Избранному
+    // 3. Категория / Избранное
     if (selectedCategory === 'Favorites') {
        result = result.filter(p => favorites.includes(p.id));
     } else if (selectedCategory !== 'All') {
@@ -162,7 +167,7 @@ function App() {
     }
 
     return result;
-  }, [products, selectedCategory, favorites, selectedBrand]);
+  }, [products, selectedCategory, favorites, selectedBrand, searchQuery]); // <--- Добавили searchQuery в зависимости
 
 
   const handleInvite = () => {
@@ -176,7 +181,6 @@ function App() {
   }
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
-  // ... (Рендер Профиля и других экранов такой же) ...
   const renderProfile = () => (
     <div className="pt-32 px-6 text-center animate-fade-in pb-20">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
@@ -192,6 +196,7 @@ function App() {
       <button onClick={handleInvite} className={`w-full font-bold py-4 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 transition-all ${inviteCopied ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'}`}>{inviteCopied ? <><CheckCircle size={18} /><span>Link Copied!</span></> : <><Copy size={18} /><span>Invite Friend (+50₽)</span></>}</button>
     </div>
   )
+
   if (orderSuccess) {
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in text-center">
@@ -201,30 +206,35 @@ function App() {
             <button onClick={() => setOrderSuccess(false)} className="bg-white text-black px-8 py-4 font-bold uppercase tracking-wider text-sm rounded-lg w-full max-w-xs">Continue Shopping</button>
         </div>
     )
-}
+  }
 
   // --- ГЛАВНЫЙ РЕНДЕР SHOP ---
   const renderShop = () => (
     <div className="animate-fade-in">
         
-        {/* ЗАГОЛОВОК (Меняется, если выбран бренд) */}
-        <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
-          {selectedBrand ? (
-             <div className="animate-slide-up">
-                 <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> CLEAR FILTER</button>
-                 <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{selectedBrand.name}</h1>
-                 <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Official Collection"}</p>
-             </div>
-          ) : (
-             <>
-                <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
-                <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
-             </>
-          )}
-        </section>
+        {/* HERO (Скрываем при поиске, чтобы не мешал) */}
+        {!searchQuery && (
+          <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
+            {selectedBrand ? (
+              <div className="animate-slide-up">
+                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> CLEAR FILTER</button>
+                  <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{selectedBrand.name}</h1>
+                  <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Official Collection"}</p>
+              </div>
+            ) : (
+              <>
+                  <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
+                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
+              </>
+            )}
+          </section>
+        )}
 
-        {/* 🔥 КАРУСЕЛЬ БРЕНДОВ (Показываем, если не выбран конкретный бренд) 🔥 */}
-        {!selectedBrand && brands.length > 0 && (
+        {/* Если поиск активен, делаем отступ сверху, чтобы товары не налезли на шапку */}
+        {searchQuery && <div className="h-32"></div>}
+
+        {/* КАРУСЕЛЬ БРЕНДОВ (Скрываем при поиске или если выбран бренд) */}
+        {!searchQuery && !selectedBrand && brands.length > 0 && (
           <div className="px-4 mb-10 overflow-x-auto no-scrollbar">
              <div className="flex gap-4 justify-start min-w-max px-2">
                 {brands.map(brand => (
@@ -249,16 +259,18 @@ function App() {
           </div>
         )}
 
-        {/* ФИЛЬТРЫ КАТЕГОРИЙ */}
-        <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
-        <div className="flex gap-2 justify-center min-w-max">
-            {categories.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedCategory === cat ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'}`}>
-                {cat === 'Favorites' ? `♥ Favorites` : cat} 
-            </button>
-            ))}
-        </div>
-        </div>
+        {/* ФИЛЬТРЫ КАТЕГОРИЙ (Скрываем при поиске) */}
+        {!searchQuery && (
+          <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
+            <div className="flex gap-2 justify-center min-w-max">
+                {categories.map(cat => (
+                <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedCategory === cat ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'}`}>
+                    {cat === 'Favorites' ? `♥ Favorites` : cat} 
+                </button>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* СПИСОК ТОВАРОВ */}
         <section className="px-4 pb-8">
@@ -285,7 +297,9 @@ function App() {
                 )
             })}
             {filteredProducts.length === 0 && (
-                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{selectedCategory === 'Favorites' ? "No favorites yet" : `No items in ${selectedCategory}`}</div>
+                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">
+                    {searchQuery ? `No results for "${searchQuery}"` : "No items found"}
+                </div>
             )}
             </div>
         )}
@@ -295,10 +309,48 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-white selection:text-black">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
-        <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto">
-          <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
-          <div className="text-xs font-mono text-gray-400">{user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST MODE'}</div>
+      
+      {/* 🔥 HEADER С ПОИСКОМ 🔥 */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
+        <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto h-16">
+          
+          {isSearchOpen ? (
+            // РЕЖИМ ПОИСКА
+            <div className="flex items-center w-full gap-2 animate-fade-in">
+                <Search size={20} className="text-gray-500" />
+                <input 
+                    autoFocus
+                    type="text" 
+                    placeholder="Search products..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600"
+                />
+                <button 
+                    onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchQuery('');
+                    }}
+                    className="p-2"
+                >
+                    <X size={20} className="text-white"/>
+                </button>
+            </div>
+          ) : (
+            // ОБЫЧНЫЙ РЕЖИМ
+            <>
+              <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
+              <div className="flex items-center gap-4">
+                  {/* Кнопка открытия поиска */}
+                  <button onClick={() => setIsSearchOpen(true)} className="text-white hover:text-gray-300">
+                      <Search size={20} />
+                  </button>
+                  <div className="text-xs font-mono text-gray-400">
+                      {user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST'}
+                  </div>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
