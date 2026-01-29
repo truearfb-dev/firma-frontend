@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package, Heart } from 'lucide-react' // <--- Добавили Heart
+import { Loader, CheckCircle, Copy, Package, Heart } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
 import Orders from './Orders'
+import Community from './Community' // <--- ИМПОРТ НОВОГО КОМПОНЕНТА
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 const BOT_USERNAME = 'firma_shop_bot'; 
@@ -17,7 +18,7 @@ function App() {
   // State
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
-  const [favorites, setFavorites] = useState([]) // <--- СПИСОК ЛАЙКОВ
+  const [favorites, setFavorites] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isOrdersOpen, setIsOrdersOpen] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
@@ -36,7 +37,7 @@ function App() {
       if (userData) {
         setUser(userData);
         loginUser(userData, startParam);
-        fetchFavorites(userData.id); // <--- ЗАГРУЖАЕМ ЛАЙКИ ПРИ СТАРТЕ
+        fetchFavorites(userData.id);
       }
     }
 
@@ -64,32 +65,25 @@ function App() {
     } catch (error) { console.error("Login failed:", error); }
   }
 
-  // --- ЛОГИКА ЛАЙКОВ ---
   const fetchFavorites = async (tgId) => {
     try {
       const res = await fetch(`${API_URL}/favorites/${tgId}`);
       const data = await res.json();
-      setFavorites(data); // Придет массив [1, 5, 8]
+      setFavorites(data);
     } catch (error) { console.error("Fav load error:", error); }
   }
 
   const handleToggleFavorite = async (e, productId) => {
-    e.stopPropagation(); // <--- ВАЖНО: Чтобы не открывалась карточка товара
-    
-    // 1. Оптимистичное обновление (сразу меняем цвет, не ждем сервера)
+    e.stopPropagation();
     const isLiked = favorites.includes(productId);
     if (isLiked) {
       setFavorites(favorites.filter(id => id !== productId));
     } else {
       setFavorites([...favorites, productId]);
     }
-
-    // 2. Вибрация
     if (window.Telegram?.WebApp?.HapticFeedback) {
       window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
-
-    // 3. Отправка на сервер
     if (user) {
       try {
         await fetch(`${API_URL}/favorites/toggle`, {
@@ -101,16 +95,13 @@ function App() {
     }
   }
 
-  // --- ФИЛЬТРАЦИЯ ---
   const categories = useMemo(() => {
     const allCats = products.map(p => p.category).filter(Boolean);
-    // Добавляем 'Favorites' в список категорий
     return ['All', 'Favorites', ...new Set(allCats)];
   }, [products]);
 
   const filteredProducts = useMemo(() => {
     if (selectedCategory === 'Favorites') {
-       // Показываем только то, что в списке favorites
        return products.filter(p => favorites.includes(p.id));
     }
     if (selectedCategory === 'All') return products;
@@ -118,7 +109,6 @@ function App() {
   }, [products, selectedCategory, favorites]);
 
 
-  // ... Остальные функции ...
   const handleInvite = () => {
     if (!user) return;
     const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.id}`;
@@ -168,6 +158,56 @@ function App() {
       )
   }
 
+  // --- ГЛАВНЫЙ РЕНДЕР ---
+  // Выносим рендер вкладок в переменные для чистоты кода
+  
+  const renderShop = () => (
+    <div className="animate-fade-in">
+        <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
+        <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
+        <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
+        </section>
+        <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
+        <div className="flex gap-2 justify-center min-w-max">
+            {categories.map(cat => (
+            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedCategory === cat ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'}`}>
+                {cat === 'Favorites' ? `♥ Favorites` : cat} 
+            </button>
+            ))}
+        </div>
+        </div>
+        <section className="px-4 pb-8">
+        {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Drop...</span></div>
+        ) : (
+            <div className="grid grid-cols-1 gap-6">
+            {filteredProducts.map((product) => {
+                const isLiked = favorites.includes(product.id);
+                return (
+                <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
+                    <button onClick={(e) => handleToggleFavorite(e, product.id)} className="absolute top-6 right-6 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all">
+                        <Heart size={18} className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
+                    </button>
+                    <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
+                    {product.image_url && <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
+                    </div>
+                    <div className="flex justify-between items-end">
+                    <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
+                    <div className="text-lg font-mono font-bold">{product.price} ₽</div>
+                    </div>
+                    <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">View Details</button>
+                </div>
+                )
+            })}
+            {filteredProducts.length === 0 && (
+                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{selectedCategory === 'Favorites' ? "No favorites yet" : `No items in ${selectedCategory}`}</div>
+            )}
+            </div>
+        )}
+        </section>
+    </div>
+  )
+
   const renderProfile = () => (
     <div className="pt-32 px-6 text-center animate-fade-in pb-20">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
@@ -184,6 +224,7 @@ function App() {
     </div>
   )
 
+  // --- ИТОГОВЫЙ JSX ---
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-white selection:text-black">
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
@@ -198,77 +239,12 @@ function App() {
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
         {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         
-        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && (
-           <div className="animate-fade-in">
-             <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
-                <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
-                <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
-             </section>
-
-             {/* ФИЛЬТРЫ + FAVORITES */}
-             <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
-               <div className="flex gap-2 justify-center min-w-max">
-                 {categories.map(cat => (
-                   <button
-                     key={cat}
-                     onClick={() => setSelectedCategory(cat)}
-                     className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
-                       selectedCategory === cat 
-                         ? 'bg-white text-black border-white' 
-                         : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
-                     }`}
-                   >
-                     {cat === 'Favorites' ? `♥ Favorites` : cat} 
-                   </button>
-                 ))}
-               </div>
-             </div>
-
-             <section className="px-4 pb-8">
-               {isLoading ? (
-                 <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Drop...</span></div>
-               ) : (
-                 <div className="grid grid-cols-1 gap-6">
-                   {filteredProducts.map((product) => {
-                     // Проверяем, лайкнут ли этот товар
-                     const isLiked = favorites.includes(product.id);
-                     
-                     return (
-                       <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
-                         
-                         {/* 🔥 КНОПКА ЛАЙКА (Абсолютное позиционирование) */}
-                         <button 
-                            onClick={(e) => handleToggleFavorite(e, product.id)}
-                            className="absolute top-6 right-6 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all"
-                         >
-                            <Heart 
-                                size={18} 
-                                className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} 
-                            />
-                         </button>
-
-                         <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
-                            {product.image_url && <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
-                         </div>
-                         <div className="flex justify-between items-end">
-                           <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
-                           <div className="text-lg font-mono font-bold">{product.price} ₽</div>
-                         </div>
-                         <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">View Details</button>
-                       </div>
-                     )
-                   })}
-                   
-                   {/* Пустое состояние */}
-                   {filteredProducts.length === 0 && (
-                     <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">
-                        {selectedCategory === 'Favorites' ? "No favorites yet" : `No items in ${selectedCategory}`}
-                     </div>
-                   )}
-                 </div>
-               )}
-             </section>
-           </div>
+        {/* ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК */}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
+        
+        {/* 🔥 НОВАЯ ВКЛАДКА COMMUNITY 🔥 */}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (
+            <Community user={user} />
         )}
 
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
