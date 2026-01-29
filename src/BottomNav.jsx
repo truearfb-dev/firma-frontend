@@ -1,10 +1,10 @@
 import React from 'react';
-import { ShoppingBag, User, Users } from 'lucide-react'; // Добавили иконку Users
+import { ShoppingBag, User, Camera } from 'lucide-react'; // <--- Заменили Users на Camera
 
 const BottomNav = ({ currentTab, onChange }) => {
   const navItems = [
     { id: 'shop', label: 'Shop', icon: ShoppingBag },
-    { id: 'community', label: 'Community', icon: Users }, // Новая вкладка посередине
+    { id: 'community', label: 'Community', icon: Camera }, // <--- Теперь тут Камера
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
