@@ -176,7 +176,10 @@ function App() {
 
   const handleInvite = () => {
     if (!user) return;
-    const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.id}`;
+    // 🔥 ИСПРАВЛЕНИЕ: Берем telegram_id, если он есть, иначе id
+    const safeId = user.telegram_id || user.id; 
+    const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${safeId}`;
+    
     navigator.clipboard.writeText(inviteLink).then(() => {
       if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       setInviteCopied(true);
