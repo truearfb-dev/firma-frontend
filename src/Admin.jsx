@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag } from 'lucide-react';
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
 
-// 🔥 Принимаем initData (это наша подпись)
 const Admin = ({ user, initData }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
@@ -25,7 +24,6 @@ const Admin = ({ user, initData }) => {
   const fileInputRef = useRef(null);
   const brandInputRef = useRef(null);
 
-  // ID пользователя для статистики
   const safeId = user.telegram_id || user.id;
 
   useEffect(() => {
@@ -37,11 +35,8 @@ const Admin = ({ user, initData }) => {
     if (activeSection === 'orders') fetchOrders();
   }, [activeSection]);
 
-  // 🔐 ЗАПРОСЫ ТЕПЕРЬ ОТПРАВЛЯЮТ ПОДПИСЬ (initData)
-
   const fetchStats = async () => {
     try {
-      // Отправляем initData в URL параметрах (encoded)
       const encodedInit = encodeURIComponent(initData);
       const res = await fetch(`${API_URL}/admin/stats?telegram_id=${safeId}&initData=${encodedInit}`);
       if (res.ok) setStats(await res.json());
@@ -63,14 +58,12 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   };
 
-  // --- ACTIONS ---
-
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (!productFile || !productName || !productPrice) return alert("Fill all fields");
+    if (!productFile || !productName || !productPrice) return alert("Заполните все поля");
     setIsSubmitting(true);
     const formData = new FormData();
-    formData.append('initData', initData); // <--- Подпись
+    formData.append('initData', initData); 
     formData.append('name', productName);
     formData.append('price', productPrice);
     formData.append('category', productCategory);
@@ -81,36 +74,36 @@ const Admin = ({ user, initData }) => {
     try {
         const res = await fetch(`${API_URL}/admin/products`, { method: 'POST', body: formData });
         if (res.ok) {
-            alert("Product Created!");
+            alert("Товар создан!");
             setProductName(''); setProductPrice(''); setProductFile(null);
         } else {
             const err = await res.json();
-            alert("Error: " + (err.detail || "Unknown"));
+            alert("Ошибка: " + (err.detail || "Неизвестная ошибка"));
         }
-    } catch (e) { alert("Network Error"); }
+    } catch (e) { alert("Ошибка сети"); }
     setIsSubmitting(false);
   };
 
   const handleCreateBrand = async (e) => {
     e.preventDefault();
-    if (!brandFile || !brandName) return alert("Fill all fields");
+    if (!brandFile || !brandName) return alert("Заполните все поля");
     setIsSubmitting(true);
     const formData = new FormData();
-    formData.append('initData', initData); // <--- Подпись
+    formData.append('initData', initData); 
     formData.append('name', brandName);
     formData.append('file', brandFile);
 
     try {
         const res = await fetch(`${API_URL}/admin/brands`, { method: 'POST', body: formData });
         if (res.ok) {
-            alert("Brand Created!");
+            alert("Бренд создан!");
             setBrandName(''); setBrandFile(null);
             fetchBrands();
         } else {
             const err = await res.json();
-            alert("Error: " + (err.detail || "Unknown"));
+            alert("Ошибка: " + (err.detail || "Неизвестная ошибка"));
         }
-    } catch (e) { alert("Network Error"); }
+    } catch (e) { alert("Ошибка сети"); }
     setIsSubmitting(false);
   };
 
@@ -119,7 +112,7 @@ const Admin = ({ user, initData }) => {
           const res = await fetch(`${API_URL}/admin/orders/status`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ initData: initData, order_id: orderId, status: newStatus }) // <--- JSON с подписью
+              body: JSON.stringify({ initData: initData, order_id: orderId, status: newStatus }) 
           });
           if (res.ok) {
               fetchOrders();
@@ -128,19 +121,16 @@ const Admin = ({ user, initData }) => {
       } catch (e) { console.error(e); }
   }
 
-  // --- RENDERS (Всё как было) ---
-
   return (
     <div className="pt-24 pb-24 animate-fade-in px-4">
-      <h1 className="text-3xl font-black uppercase mb-6">God Mode <span className="text-red-500">.</span></h1>
+      <h1 className="text-3xl font-black uppercase mb-6">РЕЖИМ БОГА <span className="text-red-500">.</span></h1>
 
-      {/* TABS */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-2">
         {[
-            { id: 'dashboard', icon: DollarSign, label: 'Stats' },
-            { id: 'products', icon: Plus, label: 'Add Item' },
-            { id: 'brands', icon: Tag, label: 'Add Brand' },
-            { id: 'orders', icon: Package, label: 'Orders' },
+            { id: 'dashboard', icon: DollarSign, label: 'Статистика' },
+            { id: 'products', icon: Plus, label: 'Товар' },
+            { id: 'brands', icon: Tag, label: 'Бренд' },
+            { id: 'orders', icon: Package, label: 'Заказы' },
         ].map(tab => (
             <button
                 key={tab.id}
@@ -157,58 +147,55 @@ const Admin = ({ user, initData }) => {
         ))}
       </div>
 
-      {/* 1. DASHBOARD */}
       {activeSection === 'dashboard' && (
         <div className="grid grid-cols-2 gap-4 animate-slide-up">
             <div className="bg-[#111] border border-white/10 p-4 rounded-xl col-span-2">
-                <span className="text-xs font-bold text-gray-500 uppercase">Revenue</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Выручка</span>
                 <div className="text-4xl font-mono font-bold text-green-400 mt-1">{stats.revenue.toLocaleString()} ₽</div>
             </div>
             <div className="bg-[#111] border border-white/10 p-4 rounded-xl">
-                <span className="text-xs font-bold text-gray-500 uppercase">Orders</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Заказы</span>
                 <div className="text-2xl font-mono font-bold mt-1">{stats.orders}</div>
             </div>
             <div className="bg-[#111] border border-white/10 p-4 rounded-xl">
-                <span className="text-xs font-bold text-gray-500 uppercase">Users</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Клиенты</span>
                 <div className="text-2xl font-mono font-bold mt-1">{stats.users}</div>
             </div>
         </div>
       )}
 
-      {/* 2. ADD PRODUCT */}
       {activeSection === 'products' && (
         <form onSubmit={handleCreateProduct} className="space-y-4 animate-slide-up">
             <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#111] border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center cursor-pointer">
                 {productFile ? <img src={URL.createObjectURL(productFile)} className="w-full h-full object-cover rounded-xl" /> : <Upload className="text-gray-500" />}
                 <input type="file" ref={fileInputRef} onChange={e => setProductFile(e.target.files[0])} className="hidden" accept="image/*" />
             </div>
-            <input type="text" placeholder="Name" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+            <input type="text" placeholder="Название товара" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
             <div className="flex gap-4">
-                <input type="number" placeholder="Price" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+                <input type="number" placeholder="Цена (₽)" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
                 <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="bg-[#111] border border-white/10 rounded-xl px-4 text-white outline-none w-1/2">
-                    <option value="">No Brand</option>
+                    <option value="">Без бренда</option>
                     {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
             </div>
-            <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Create Product"}</button>
+            <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Создать товар"}</button>
         </form>
       )}
 
-      {/* 3. ADD BRAND */}
       {activeSection === 'brands' && (
         <form onSubmit={handleCreateBrand} className="space-y-4 animate-slide-up">
             <div onClick={() => brandInputRef.current.click()} className="w-24 h-24 mx-auto bg-[#111] border border-dashed border-white/20 rounded-full flex flex-col items-center justify-center cursor-pointer overflow-hidden">
                 {brandFile ? <img src={URL.createObjectURL(brandFile)} className="w-full h-full object-cover" /> : <Tag className="text-gray-500" />}
                 <input type="file" ref={brandInputRef} onChange={e => setBrandFile(e.target.files[0])} className="hidden" accept="image/*" />
             </div>
-            <input type="text" placeholder="Brand Name (e.g. Nike)" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
-            <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Create Brand"}</button>
+            <input type="text" placeholder="Название бренда (Nike)" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
+            <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Создать бренд"}</button>
             <div className="pt-8">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Existing Brands</h3>
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Существующие бренды</h3>
                 <div className="flex gap-3 flex-wrap">
                     {brands.map(b => (
                         <div key={b.id} className="flex items-center gap-2 bg-[#111] px-3 py-2 rounded-lg border border-white/5">
-                            <div className="w-6 h-6 rounded-full bg-white/10 overflow-hidden"><img src={`https://firmashop-truear.waw0.amvera.tech${b.logo_url}`} className="w-full h-full object-cover"/></div>
+                            <div className="w-6 h-6 rounded-full bg-white/10 overflow-hidden"><img src={`${API_URL.replace('/api', '')}${b.logo_url}`} className="w-full h-full object-cover"/></div>
                             <span className="text-xs font-bold uppercase">{b.name}</span>
                         </div>
                     ))}
@@ -217,14 +204,13 @@ const Admin = ({ user, initData }) => {
         </form>
       )}
 
-      {/* 4. ORDERS */}
       {activeSection === 'orders' && (
         <div className="space-y-4 animate-slide-up">
             {orders.map(order => (
                 <div key={order.id} className="bg-[#111] border border-white/10 p-4 rounded-xl">
                     <div className="flex justify-between items-start mb-2">
                         <div>
-                            <span className="text-xs font-bold text-gray-500 uppercase">Order #{order.id}</span>
+                            <span className="text-xs font-bold text-gray-500 uppercase">Заказ #{order.id}</span>
                             <div className="text-sm font-bold text-white">{order.customer}</div>
                         </div>
                         <div className="text-right">

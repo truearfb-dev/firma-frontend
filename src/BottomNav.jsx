@@ -1,16 +1,15 @@
 import React from 'react';
-import { ShoppingBag, User, Camera, Settings } from 'lucide-react'; // <--- Добавили Settings
+import { ShoppingBag, User, Camera, Settings } from 'lucide-react';
 
-const BottomNav = ({ currentTab, onChange, isAdmin }) => { // <--- Принимаем isAdmin
+const BottomNav = ({ currentTab, onChange, isAdmin }) => {
   const navItems = [
-    { id: 'shop', label: 'Shop', icon: ShoppingBag },
-    { id: 'community', label: 'Community', icon: Camera },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'shop', label: 'Магазин', icon: ShoppingBag }, // Shop -> Магазин
+    { id: 'community', label: 'Лента', icon: Camera },   // Community -> Лента
+    { id: 'profile', label: 'Профиль', icon: User },     // Profile -> Профиль
   ];
 
-  // 🔥 Если админ - добавляем секретную кнопку
   if (isAdmin) {
-    navItems.push({ id: 'admin', label: 'Admin', icon: Settings });
+    navItems.push({ id: 'admin', label: 'Админка', icon: Settings }); // Admin -> Админка
   }
 
   return (

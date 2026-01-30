@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ShoppingBag, AlertCircle } from 'lucide-react';
 
-const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech';
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
 
 const ProductDetail = ({ product, onBack, onAddToCart }) => {
   const [selectedSize, setSelectedSize] = useState(null);
@@ -10,13 +10,12 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
   const handleAddToCart = () => {
     if (sizes.length > 0 && !selectedSize) {
-      alert("Please select a size");
+      alert("Пожалуйста, выберите размер");
       return;
     }
     onAddToCart(product, selectedSize);
   };
 
-  // 🔥 УМНАЯ ССЫЛКА НА КАРТИНКУ
   const imgUrl = product.image_url 
     ? (product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}${product.image_url}`)
     : null;
@@ -31,7 +30,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
       </button>
 
       <div className="w-full h-[50vh] relative bg-[#111]">
-        {/* Используем imgUrl вместо product.image_url */}
         {imgUrl && <img src={imgUrl} alt={product.name} className="w-full h-full object-cover"/>}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
       </div>
@@ -59,7 +57,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
         {sizes.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Select Size</h3>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Выберите размер</h3>
             <div className="flex flex-wrap gap-3">
               {sizes.map((size) => (
                 <button
@@ -79,9 +77,9 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         )}
 
         <div className="space-y-4 mb-12">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Description</h3>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Описание</h3>
           <p className="text-sm text-gray-300 leading-relaxed font-light">
-            {product.description || "No description."}
+            {product.description || "Описание отсутствует."}
           </p>
         </div>
       </div>
@@ -98,7 +96,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         >
           {sizes.length > 0 && !selectedSize ? <AlertCircle size={20}/> : <ShoppingBag size={20} />}
           <span className="uppercase tracking-wider text-sm">
-            {sizes.length > 0 && !selectedSize ? 'Select Size' : 'Add to Cart'}
+            {sizes.length > 0 && !selectedSize ? 'Выберите размер' : 'В корзину'}
           </span>
         </button>
       </div>

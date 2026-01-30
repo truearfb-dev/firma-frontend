@@ -7,8 +7,7 @@ import Orders from './Orders'
 import Community from './Community'
 import Admin from './Admin'
 
-// 🔐 КОНФИГУРАЦИЯ
-const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech';
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
 const API_URL = `${BASE_URL}/api`;
 const BOT_USERNAME = 'firma_shop_bot'; 
 
@@ -16,12 +15,11 @@ function App() {
   const [products, setProducts] = useState([])
   const [brands, setBrands] = useState([]) 
   const [user, setUser] = useState(null)
-  const [initData, setInitData] = useState('') // <--- ХРАНИМ ПАСПОРТ
+  const [initData, setInitData] = useState('') 
   const [activeTab, setActiveTab] = useState('shop')
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   
-  // State
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
   const [favorites, setFavorites] = useState([])
@@ -34,7 +32,6 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // 🖼 Функция для картинок
   const getImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -42,13 +39,12 @@ function App() {
   }
 
   useEffect(() => {
-    // 1. Инициализация Telegram
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
       
-      const rawInitData = tg.initData; // <--- ВОТ НАШ КЛЮЧ
+      const rawInitData = tg.initData; 
       setInitData(rawInitData);
 
       const userData = tg.initDataUnsafe?.user;
@@ -56,12 +52,11 @@ function App() {
       
       if (userData && rawInitData) {
         setUser(userData);
-        loginUser(rawInitData, startParam); // Логинимся через initData
-        fetchFavorites(userData.id); // Favorites пока по старому (публично)
+        loginUser(rawInitData, startParam); 
+        fetchFavorites(userData.id); 
       }
     }
 
-    // 2. Загрузка данных
     fetch(`${API_URL}/products`)
       .then(res => res.json())
       .then(data => { setProducts(data); setIsLoading(false); })
@@ -72,24 +67,20 @@ function App() {
       .catch(err => console.error("Brand Error:", err))
   }, [])
 
-  // 🔐 НОВАЯ АВТОРИЗАЦИЯ
   const loginUser = async (initDataStr, startParam) => {
     try {
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          initData: initDataStr, // Отправляем подпись
+          initData: initDataStr, 
           start_param: startParam
         }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.is_admin) setIsAdmin(true);
-        // Обновляем баланс
         setUser(prev => ({...prev, ...data})); 
-      } else {
-        console.error("Auth Error:", await res.text());
       }
     } catch (error) { console.error("Login failed:", error); }
   }
@@ -102,7 +93,6 @@ function App() {
     } catch (error) { console.error("Fav load error:", error); }
   }
 
-  // 🔐 ЛАЙКИ ТЕПЕРЬ ЗАЩИЩЕНЫ
   const handleToggleFavorite = async (e, productId) => {
     e.stopPropagation();
     const isLiked = favorites.includes(productId);
@@ -119,7 +109,7 @@ function App() {
         await fetch(`${API_URL}/favorites/toggle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: initData, product_id: productId }) // <--- initData
+          body: JSON.stringify({ initData: initData, product_id: productId }) 
         });
       } catch (error) { console.error("Like error:", error); }
     }
@@ -136,7 +126,6 @@ function App() {
     setCart(cart.filter((_, index) => index !== indexToRemove));
   }
 
-  // 🔐 ЗАКАЗ ТЕПЕРЬ ЗАЩИЩЕН
   const handleCheckout = async () => {
     if (!user || !initData) { alert("Ошибка: Нет авторизации"); return; }
     
@@ -149,21 +138,20 @@ function App() {
         const response = await fetch(`${API_URL}/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: initData, items: orderItems }) // <--- initData
+            body: JSON.stringify({ initData: initData, items: orderItems }) 
         });
         if (response.ok) {
             setCart([]); setIsCartOpen(false); setOrderSuccess(true);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         } else {
-            alert("Order failed");
+            alert("Ошибка при создании заказа");
         }
     } catch (error) { console.error(error); }
   }
 
-  // ... (Фильтрация и рендеры остаются без изменений) ...
   const categories = useMemo(() => {
     const allCats = products.map(p => p.category).filter(Boolean);
-    return ['All', 'Favorites', ...new Set(allCats)];
+    return ['Все', 'Избранное', ...new Set(allCats)];
   }, [products]);
 
   const filteredProducts = useMemo(() => {
@@ -178,9 +166,9 @@ function App() {
     if (selectedBrand) {
         result = result.filter(p => p.brand_id === selectedBrand.id);
     }
-    if (selectedCategory === 'Favorites') {
+    if (selectedCategory === 'Избранное') {
        result = result.filter(p => favorites.includes(p.id));
-    } else if (selectedCategory !== 'All') {
+    } else if (selectedCategory !== 'Все') {
        result = result.filter(p => p.category === selectedCategory);
     }
     return result;
@@ -202,15 +190,15 @@ function App() {
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
         {user?.photo_url ? <img src={user.photo_url} className="w-full h-full rounded-full" /> : <span>👤</span>}
       </div>
-      <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'GUEST'}</h2>
+      <h2 className="text-2xl font-black uppercase mb-2">{user ? user.first_name : 'ГОСТЬ'}</h2>
       <p className="text-gray-500 font-mono text-xs mb-8">@{user ? user.username : 'guest'}</p>
-      {isAdmin && <div className="inline-block px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full text-red-500 text-[10px] font-bold uppercase tracking-widest mb-6">Admin Access Granted</div>}
+      {isAdmin && <div className="inline-block px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full text-red-500 text-[10px] font-bold uppercase tracking-widest mb-6">Доступ Администратора</div>}
       <div className="bg-[#111] border border-white/10 p-8 rounded-xl mb-6">
-        <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Your Balance</p>
+        <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase mb-4">Твой Баланс</p>
         <div className="text-5xl font-mono font-bold tracking-tight">{user?.balance || '0.00'} ₽</div>
       </div>
-      <button onClick={() => setIsOrdersOpen(true)} className="w-full bg-[#111] border border-white/10 text-white font-bold py-4 mb-3 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-[#222] transition-all"><Package size={18} /><span>My Orders</span></button>
-      <button onClick={handleInvite} className={`w-full font-bold py-4 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 transition-all ${inviteCopied ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'}`}>{inviteCopied ? <><CheckCircle size={18} /><span>Link Copied!</span></> : <><Copy size={18} /><span>Invite Friend (+50₽)</span></>}</button>
+      <button onClick={() => setIsOrdersOpen(true)} className="w-full bg-[#111] border border-white/10 text-white font-bold py-4 mb-3 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-[#222] transition-all"><Package size={18} /><span>Мои Заказы</span></button>
+      <button onClick={handleInvite} className={`w-full font-bold py-4 uppercase tracking-wider text-sm rounded-lg flex items-center justify-center gap-2 transition-all ${inviteCopied ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'}`}>{inviteCopied ? <><CheckCircle size={18} /><span>Ссылка скопирована!</span></> : <><Copy size={18} /><span>Пригласи Друга (+50₽)</span></>}</button>
     </div>
   )
 
@@ -218,9 +206,9 @@ function App() {
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in text-center">
             <CheckCircle size={64} className="text-white mb-6" />
-            <h1 className="text-4xl font-black uppercase mb-4 tracking-tighter">Order<br/>Confirmed</h1>
-            <p className="text-gray-400 font-mono text-xs max-w-xs mb-12">Ваш заказ принят. Скоро свяжемся.</p>
-            <button onClick={() => setOrderSuccess(false)} className="bg-white text-black px-8 py-4 font-bold uppercase tracking-wider text-sm rounded-lg w-full max-w-xs">Continue Shopping</button>
+            <h1 className="text-4xl font-black uppercase mb-4 tracking-tighter">Заказ<br/>Оформлен</h1>
+            <p className="text-gray-400 font-mono text-xs max-w-xs mb-12">Мы свяжемся с вами в ближайшее время для подтверждения.</p>
+            <button onClick={() => setOrderSuccess(false)} className="bg-white text-black px-8 py-4 font-bold uppercase tracking-wider text-sm rounded-lg w-full max-w-xs">Продолжить покупки</button>
         </div>
     )
   }
@@ -231,14 +219,14 @@ function App() {
           <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
               <div className="animate-slide-up">
-                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> CLEAR FILTER</button>
+                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> СБРОСИТЬ ФИЛЬТР</button>
                   <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{selectedBrand.name}</h1>
-                  <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Official Collection"}</p>
+                  <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Официальная коллекция"}</p>
               </div>
             ) : (
               <>
-                  <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">Spring 2026</p>
-                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">PREMIUM<br/><span className="text-gray-600">QUALITY</span></h1>
+                  <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">ВЕСНА 2026</p>
+                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">НОВАЯ<br/><span className="text-gray-600">КОЛЛЕКЦИЯ</span></h1>
               </>
             )}
           </section>
@@ -263,7 +251,7 @@ function App() {
             <div className="flex gap-2 justify-center min-w-max">
                 {categories.map(cat => (
                 <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedCategory === cat ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'}`}>
-                    {cat === 'Favorites' ? `♥ Favorites` : cat} 
+                    {cat === 'Избранное' ? `♥ Избранное` : cat} 
                 </button>
                 ))}
             </div>
@@ -271,12 +259,11 @@ function App() {
         )}
         <section className="px-4 pb-8">
         {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Drop...</span></div>
+            <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Загрузка дропа...</span></div>
         ) : (
             <div className="grid grid-cols-1 gap-6">
             {filteredProducts.map((product) => {
                 const isLiked = favorites.includes(product.id);
-                // Используем функцию для умной ссылки
                 const imgUrl = getImageUrl(product.image_url);
                 return (
                 <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
@@ -290,12 +277,12 @@ function App() {
                     <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
                     <div className="text-lg font-mono font-bold">{product.price} ₽</div>
                     </div>
-                    <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">View Details</button>
+                    <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Смотреть</button>
                 </div>
                 )
             })}
             {filteredProducts.length === 0 && (
-                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{searchQuery ? `No results for "${searchQuery}"` : "No items found"}</div>
+                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{searchQuery ? `Ничего не найдено по запросу "${searchQuery}"` : "Товары не найдены"}</div>
             )}
             </div>
         )}
@@ -310,7 +297,7 @@ function App() {
           {isSearchOpen ? (
             <div className="flex items-center w-full gap-2 animate-fade-in">
                 <Search size={20} className="text-gray-500" />
-                <input autoFocus type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600"/>
+                <input autoFocus type="text" placeholder="Поиск товаров..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600"/>
                 <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-2"><X size={20} className="text-white"/></button>
             </div>
           ) : (
@@ -318,7 +305,7 @@ function App() {
               <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
               <div className="flex items-center gap-4">
                   <button onClick={() => setIsSearchOpen(true)} className="text-white hover:text-gray-300"><Search size={20} /></button>
-                  <div className="text-xs font-mono text-gray-400">{user ? `HI, ${user.first_name.toUpperCase()}` : 'GUEST'}</div>
+                  <div className="text-xs font-mono text-gray-400">{user ? `ПРИВЕТ, ${user.first_name.toUpperCase()}` : 'ГОСТЬ'}</div>
               </div>
             </>
           )}
@@ -331,13 +318,12 @@ function App() {
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (<Community user={user} />)}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
-        {/* 🔥 ПЕРЕДАЕМ initData в Админку! Это важно! */}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (<Admin user={user} initData={initData} />)}
       </main>
       {!selectedProduct && !isCartOpen && !isOrdersOpen && cart.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
            <button onClick={() => setIsCartOpen(true)} className="w-full bg-white text-black p-4 rounded-xl flex items-center justify-between shadow-xl active:scale-95 transition-all">
-             <div className="flex items-center gap-3"><div className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">{cart.length}</div><span className="font-bold text-sm uppercase tracking-wide">View Bag</span></div>
+             <div className="flex items-center gap-3"><div className="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">{cart.length}</div><span className="font-bold text-sm uppercase tracking-wide">Корзина</span></div>
              <span className="font-mono font-bold text-lg">{cartTotal} ₽</span>
            </button>
         </div>
