@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, CheckCircle, Package, Layers, Tag } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
-const Admin = ({ user }) => {
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, products, brands, orders
+// 🔥 Принимаем initData (это наша подпись)
+const Admin = ({ user, initData }) => {
+  const [activeSection, setActiveSection] = useState('dashboard');
   const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
-  const [brands, setBrands] = useState([]); // Список брендов для выбора
-  const [orders, setOrders] = useState([]); // Список заказов
+  const [brands, setBrands] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // PRODUCT FORM
@@ -24,6 +25,7 @@ const Admin = ({ user }) => {
   const fileInputRef = useRef(null);
   const brandInputRef = useRef(null);
 
+  // ID пользователя для статистики
   const safeId = user.telegram_id || user.id;
 
   useEffect(() => {
@@ -31,14 +33,17 @@ const Admin = ({ user }) => {
     fetchBrands();
   }, []);
 
-  // Если перешли в заказы - грузим их
   useEffect(() => {
     if (activeSection === 'orders') fetchOrders();
   }, [activeSection]);
 
+  // 🔐 ЗАПРОСЫ ТЕПЕРЬ ОТПРАВЛЯЮТ ПОДПИСЬ (initData)
+
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/stats?telegram_id=${safeId}`);
+      // Отправляем initData в URL параметрах (encoded)
+      const encodedInit = encodeURIComponent(initData);
+      const res = await fetch(`${API_URL}/admin/stats?telegram_id=${safeId}&initData=${encodedInit}`);
       if (res.ok) setStats(await res.json());
     } catch (e) { console.error(e); }
   };
@@ -52,7 +57,8 @@ const Admin = ({ user }) => {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/orders?telegram_id=${safeId}`);
+      const encodedInit = encodeURIComponent(initData);
+      const res = await fetch(`${API_URL}/admin/orders?initData=${encodedInit}`);
       if (res.ok) setOrders(await res.json());
     } catch (e) { console.error(e); }
   };
@@ -64,7 +70,7 @@ const Admin = ({ user }) => {
     if (!productFile || !productName || !productPrice) return alert("Fill all fields");
     setIsSubmitting(true);
     const formData = new FormData();
-    formData.append('telegram_id', safeId);
+    formData.append('initData', initData); // <--- Подпись
     formData.append('name', productName);
     formData.append('price', productPrice);
     formData.append('category', productCategory);
@@ -77,7 +83,10 @@ const Admin = ({ user }) => {
         if (res.ok) {
             alert("Product Created!");
             setProductName(''); setProductPrice(''); setProductFile(null);
-        } else alert("Error");
+        } else {
+            const err = await res.json();
+            alert("Error: " + (err.detail || "Unknown"));
+        }
     } catch (e) { alert("Network Error"); }
     setIsSubmitting(false);
   };
@@ -87,7 +96,7 @@ const Admin = ({ user }) => {
     if (!brandFile || !brandName) return alert("Fill all fields");
     setIsSubmitting(true);
     const formData = new FormData();
-    formData.append('telegram_id', safeId);
+    formData.append('initData', initData); // <--- Подпись
     formData.append('name', brandName);
     formData.append('file', brandFile);
 
@@ -96,8 +105,11 @@ const Admin = ({ user }) => {
         if (res.ok) {
             alert("Brand Created!");
             setBrandName(''); setBrandFile(null);
-            fetchBrands(); // Обновляем список
-        } else alert("Error");
+            fetchBrands();
+        } else {
+            const err = await res.json();
+            alert("Error: " + (err.detail || "Unknown"));
+        }
     } catch (e) { alert("Network Error"); }
     setIsSubmitting(false);
   };
@@ -107,16 +119,16 @@ const Admin = ({ user }) => {
           const res = await fetch(`${API_URL}/admin/orders/status`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ telegram_id: safeId, order_id: orderId, status: newStatus })
+              body: JSON.stringify({ initData: initData, order_id: orderId, status: newStatus }) // <--- JSON с подписью
           });
           if (res.ok) {
-              fetchOrders(); // Обновляем список
+              fetchOrders();
               if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
           }
       } catch (e) { console.error(e); }
   }
 
-  // --- RENDERS ---
+  // --- RENDERS (Всё как было) ---
 
   return (
     <div className="pt-24 pb-24 animate-fade-in px-4">
@@ -173,8 +185,6 @@ const Admin = ({ user }) => {
             <input type="text" placeholder="Name" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
             <div className="flex gap-4">
                 <input type="number" placeholder="Price" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
-                
-                {/* BRAND SELECTOR */}
                 <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="bg-[#111] border border-white/10 rounded-xl px-4 text-white outline-none w-1/2">
                     <option value="">No Brand</option>
                     {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -193,8 +203,6 @@ const Admin = ({ user }) => {
             </div>
             <input type="text" placeholder="Brand Name (e.g. Nike)" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
             <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Create Brand"}</button>
-            
-            {/* СПИСОК УЖЕ СОЗДАННЫХ БРЕНДОВ */}
             <div className="pt-8">
                 <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Existing Brands</h3>
                 <div className="flex gap-3 flex-wrap">
@@ -227,7 +235,6 @@ const Admin = ({ user }) => {
                     <div className="text-xs text-gray-400 mb-4 pb-4 border-b border-white/5 font-mono leading-relaxed">
                         {order.items}
                     </div>
-                    {/* STATUS BUTTONS */}
                     <div className="flex gap-2">
                         {['new', 'processing', 'sent', 'done'].map(st => (
                             <button 

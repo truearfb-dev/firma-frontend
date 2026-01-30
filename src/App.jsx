@@ -7,7 +7,7 @@ import Orders from './Orders'
 import Community from './Community'
 import Admin from './Admin'
 
-// 🔥 ВАЖНО: Разделяем Базовый URL и API
+// 🔐 КОНФИГУРАЦИЯ
 const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech';
 const API_URL = `${BASE_URL}/api`;
 const BOT_USERNAME = 'firma_shop_bot'; 
@@ -16,9 +16,12 @@ function App() {
   const [products, setProducts] = useState([])
   const [brands, setBrands] = useState([]) 
   const [user, setUser] = useState(null)
+  const [initData, setInitData] = useState('') // <--- ХРАНИМ ПАСПОРТ
   const [activeTab, setActiveTab] = useState('shop')
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  
+  // State
   const [selectedProduct, setSelectedProduct] = useState(null) 
   const [cart, setCart] = useState([]) 
   const [favorites, setFavorites] = useState([])
@@ -31,26 +34,34 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // 🖼 Функция для картинок (лечит битые ссылки)
+  // 🖼 Функция для картинок
   const getImageUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url; // Если это полная ссылка - ок
-    return `${BASE_URL}${url}`; // Если это /static... - добавляем домен
+    if (url.startsWith('http')) return url;
+    return `${BASE_URL}${url}`;
   }
 
   useEffect(() => {
+    // 1. Инициализация Telegram
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
+      
+      const rawInitData = tg.initData; // <--- ВОТ НАШ КЛЮЧ
+      setInitData(rawInitData);
+
       const userData = tg.initDataUnsafe?.user;
       const startParam = tg.initDataUnsafe?.start_param;
-      if (userData) {
+      
+      if (userData && rawInitData) {
         setUser(userData);
-        loginUser(userData, startParam);
-        fetchFavorites(userData.id);
+        loginUser(rawInitData, startParam); // Логинимся через initData
+        fetchFavorites(userData.id); // Favorites пока по старому (публично)
       }
     }
+
+    // 2. Загрузка данных
     fetch(`${API_URL}/products`)
       .then(res => res.json())
       .then(data => { setProducts(data); setIsLoading(false); })
@@ -61,22 +72,24 @@ function App() {
       .catch(err => console.error("Brand Error:", err))
   }, [])
 
-  const loginUser = async (tgUser, startParam) => {
+  // 🔐 НОВАЯ АВТОРИЗАЦИЯ
+  const loginUser = async (initDataStr, startParam) => {
     try {
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          telegram_id: tgUser.id,
-          username: tgUser.username,
-          first_name: tgUser.first_name,
+          initData: initDataStr, // Отправляем подпись
           start_param: startParam
         }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.is_admin) setIsAdmin(true);
-        setUser(prev => ({...prev, ...data}));
+        // Обновляем баланс
+        setUser(prev => ({...prev, ...data})); 
+      } else {
+        console.error("Auth Error:", await res.text());
       }
     } catch (error) { console.error("Login failed:", error); }
   }
@@ -89,6 +102,7 @@ function App() {
     } catch (error) { console.error("Fav load error:", error); }
   }
 
+  // 🔐 ЛАЙКИ ТЕПЕРЬ ЗАЩИЩЕНЫ
   const handleToggleFavorite = async (e, productId) => {
     e.stopPropagation();
     const isLiked = favorites.includes(productId);
@@ -100,12 +114,12 @@ function App() {
     if (window.Telegram?.WebApp?.HapticFeedback) {
       window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
-    if (user) {
+    if (user && initData) {
       try {
         await fetch(`${API_URL}/favorites/toggle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ telegram_id: user.id, product_id: productId })
+          body: JSON.stringify({ initData: initData, product_id: productId }) // <--- initData
         });
       } catch (error) { console.error("Like error:", error); }
     }
@@ -122,25 +136,31 @@ function App() {
     setCart(cart.filter((_, index) => index !== indexToRemove));
   }
 
+  // 🔐 ЗАКАЗ ТЕПЕРЬ ЗАЩИЩЕН
   const handleCheckout = async () => {
-    if (!user) { alert("Ошибка: Нет юзера"); return; }
+    if (!user || !initData) { alert("Ошибка: Нет авторизации"); return; }
+    
     const orderItems = cart.map(item => ({
         product_id: item.id,
         size: item.selectedSize || null
     }));
+
     try {
         const response = await fetch(`${API_URL}/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegram_id: user.id, items: orderItems })
+            body: JSON.stringify({ initData: initData, items: orderItems }) // <--- initData
         });
         if (response.ok) {
             setCart([]); setIsCartOpen(false); setOrderSuccess(true);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        } else {
+            alert("Order failed");
         }
     } catch (error) { console.error(error); }
   }
 
+  // ... (Фильтрация и рендеры остаются без изменений) ...
   const categories = useMemo(() => {
     const allCats = products.map(p => p.category).filter(Boolean);
     return ['All', 'Favorites', ...new Set(allCats)];
@@ -230,7 +250,7 @@ function App() {
                 {brands.map(brand => (
                     <div key={brand.id} onClick={() => setSelectedBrand(brand)} className="flex flex-col items-center gap-2 cursor-pointer group">
                         <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden group-active:scale-90 transition-all">
-                            {brand.logo_url ? <img src={brand.logo_url} className="w-full h-full object-cover" /> : <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>}
+                            {brand.logo_url ? <img src={getImageUrl(brand.logo_url)} className="w-full h-full object-cover" /> : <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>}
                         </div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{brand.name}</span>
                     </div>
@@ -256,7 +276,7 @@ function App() {
             <div className="grid grid-cols-1 gap-6">
             {filteredProducts.map((product) => {
                 const isLiked = favorites.includes(product.id);
-                // 🔥 ИСПОЛЬЗУЕМ УМНУЮ ФУНКЦИЮ
+                // Используем функцию для умной ссылки
                 const imgUrl = getImageUrl(product.image_url);
                 return (
                 <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
@@ -311,7 +331,8 @@ function App() {
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (<Community user={user} />)}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
-        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (<Admin user={user} />)}
+        {/* 🔥 ПЕРЕДАЕМ initData в Админку! Это важно! */}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (<Admin user={user} initData={initData} />)}
       </main>
       {!selectedProduct && !isCartOpen && !isOrdersOpen && cart.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
