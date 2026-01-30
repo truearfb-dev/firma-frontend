@@ -312,7 +312,7 @@ function App() {
         </div>
       </header>
       <main className="max-w-md mx-auto">
-        {isOrdersOpen && user && <Orders user={user} onClose={() => setIsOrdersOpen(false)} />}
+        {isOrdersOpen && user && <Orders user={user} initData={initData} onClose={() => setIsOrdersOpen(false)} />}
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
         {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}

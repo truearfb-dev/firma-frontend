@@ -1,103 +1,109 @@
 import React, { useEffect, useState } from 'react';
-import { X, Package, Loader, Clock } from 'lucide-react';
+import { X, Package, Clock, CheckCircle, Truck, AlertCircle } from 'lucide-react';
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
 
-const Orders = ({ user, onClose }) => {
+const Orders = ({ user, onClose, initData }) => {
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    const fetchOrders = async () => {
+      try {
+        // 🔥 ОТПРАВЛЯЕМ initData (ПАСПОРТ)
+        const encodedInit = encodeURIComponent(initData);
+        const res = await fetch(`${API_URL}/orders/${user.id}?initData=${encodedInit}`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
+        } else {
+          console.error("Ошибка загрузки заказов");
+        }
+      } catch (error) {
+        console.error("Network error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user && initData) {
       fetchOrders();
     }
-  }, [user]);
+  }, [user, initData]);
 
-  const fetchOrders = async () => {
-    try {
-      // Запрашиваем историю по telegram_id
-      const res = await fetch(`${API_URL}/orders/${user.id}`);
-      const data = await res.json();
-      setOrders(data);
-    } catch (error) {
-      console.error("Ошибка загрузки заказов:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Хелпер для цвета статуса
-  const getStatusColor = (status) => {
+  // Хелпер для статусов
+  const getStatusInfo = (status) => {
     switch (status) {
-      case 'new': return 'text-yellow-500 border-yellow-500/50';
-      case 'paid': return 'text-green-500 border-green-500/50';
-      case 'completed': return 'text-blue-500 border-blue-500/50';
-      case 'canceled': return 'text-red-500 border-red-500/50';
-      default: return 'text-gray-500 border-gray-500/50';
+      case 'new': return { label: 'ОБРАБОТКА', color: 'text-yellow-500', icon: Clock };
+      case 'processing': return { label: 'СОБИРАЕТСЯ', color: 'text-blue-500', icon: Package };
+      case 'sent': return { label: 'ОТПРАВЛЕН', color: 'text-purple-500', icon: Truck };
+      case 'done': return { label: 'ДОСТАВЛЕН', color: 'text-green-500', icon: CheckCircle };
+      default: return { label: status, color: 'text-gray-500', icon: AlertCircle };
     }
   };
 
   return (
     <div className="fixed inset-0 z-[60] bg-black text-white flex flex-col animate-fade-in pb-safe">
-      
       {/* HEADER */}
       <div className="px-6 py-4 flex items-center justify-between border-b border-white/10 bg-black/90 backdrop-blur">
-        <h2 className="text-xl font-black uppercase tracking-tighter">My Orders</h2>
-        <button 
-          onClick={onClose}
-          className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all"
-        >
+        <h2 className="text-xl font-black uppercase tracking-tighter">Мои Заказы</h2>
+        <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all">
           <X size={20} />
         </button>
       </div>
 
-      {/* СПИСОК */}
+      {/* CONTENT */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
-            <Loader className="animate-spin" />
-            <span className="text-xs font-mono uppercase">Loading history...</span>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"/>
+             <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Загрузка истории...</span>
           </div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
-            <Package size={48} className="opacity-20" />
-            <span className="text-xs font-mono uppercase">No orders yet</span>
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4 mt-20">
+            <Package size={48} strokeWidth={1} />
+            <p className="font-mono text-xs uppercase tracking-widest">История заказов пуста</p>
           </div>
         ) : (
-          orders.map((order) => (
-            <div key={order.id} className="bg-[#111] border border-white/5 p-4 rounded-xl animate-slide-up">
-              
-              {/* Верхняя часть: Номер и Дата */}
-              <div className="flex justify-between items-start mb-4 border-b border-white/5 pb-2">
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                    Order #{order.id}
+          orders.map((order) => {
+            const statusInfo = getStatusInfo(order.status);
+            const StatusIcon = statusInfo.icon;
+            
+            return (
+              <div key={order.id} className="bg-[#111] border border-white/10 p-5 rounded-xl animate-slide-up">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-1">
+                      Заказ #{order.id}
+                    </span>
+                    <span className="text-xs text-gray-400 font-mono">
+                      {order.created_at}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-gray-600 font-mono">
-                    <Clock size={10} />
-                    {order.created_at}
+                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 ${statusInfo.color} border border-white/5`}>
+                    <StatusIcon size={12} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest">
+                      {statusInfo.label}
+                    </span>
                   </div>
                 </div>
-                {/* Статус (Badge) */}
-                <div className={`px-2 py-1 border text-[10px] font-bold uppercase tracking-widest rounded-md ${getStatusColor(order.status)}`}>
-                  {order.status}
+
+                <div className="space-y-2 mb-4">
+                  {order.items_names.split(', ').map((item, idx) => (
+                    <div key={idx} className="text-sm font-medium leading-tight">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Итого</span>
+                  <span className="text-xl font-mono font-bold">{order.total_amount} ₽</span>
                 </div>
               </div>
-
-              {/* Список товаров (текстом) */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-300 line-clamp-2">
-                  {order.items_names || "Товары не указаны"}
-                </p>
-              </div>
-
-              {/* Итого */}
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500 font-mono uppercase">Total Amount</span>
-                <span className="text-xl font-mono font-bold">{order.total_amount} ₽</span>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
