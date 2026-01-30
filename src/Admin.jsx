@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X } from 'lucide-react';
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
 const Admin = ({ user, initData }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
   const [brands, setBrands] = useState([]);
   const [orders, setOrders] = useState([]);
+  // 🔥 НОВЫЙ STATE ДЛЯ МОДЕРАЦИИ
+  const [pendingReviews, setPendingReviews] = useState([]);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // PRODUCT FORM
@@ -33,6 +36,8 @@ const Admin = ({ user, initData }) => {
 
   useEffect(() => {
     if (activeSection === 'orders') fetchOrders();
+    // 🔥 ЗАГРУЖАЕМ СПАМ ПРИ ВХОДЕ В МОДЕРАЦИЮ
+    if (activeSection === 'moderation') fetchPendingReviews();
   }, [activeSection]);
 
   const fetchStats = async () => {
@@ -57,6 +62,17 @@ const Admin = ({ user, initData }) => {
       if (res.ok) setOrders(await res.json());
     } catch (e) { console.error(e); }
   };
+
+  // 🔥 ЗАГРУЗКА ПЕНДИНГ ОТЗЫВОВ
+  const fetchPendingReviews = async () => {
+    try {
+        const encodedInit = encodeURIComponent(initData);
+        const res = await fetch(`${API_URL}/admin/reviews/pending?initData=${encodedInit}`);
+        if (res.ok) setPendingReviews(await res.json());
+    } catch (e) { console.error(e); }
+  }
+
+  // --- ACTIONS ---
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
@@ -121,6 +137,23 @@ const Admin = ({ user, initData }) => {
       } catch (e) { console.error(e); }
   }
 
+  // 🔥 ДЕЙСТВИЯ МОДЕРАЦИИ
+  const handleReviewAction = async (reviewId, action) => {
+    // action = 'approve' | 'reject'
+    try {
+        const res = await fetch(`${API_URL}/admin/reviews/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: initData, review_id: reviewId })
+        });
+        if (res.ok) {
+            // Убираем из списка локально
+            setPendingReviews(prev => prev.filter(r => r.id !== reviewId));
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+    } catch (e) { console.error(e); }
+  }
+
   return (
     <div className="pt-24 pb-24 animate-fade-in px-4">
       <h1 className="text-3xl font-black uppercase mb-6">РЕЖИМ БОГА <span className="text-red-500">.</span></h1>
@@ -131,6 +164,7 @@ const Admin = ({ user, initData }) => {
             { id: 'products', icon: Plus, label: 'Товар' },
             { id: 'brands', icon: Tag, label: 'Бренд' },
             { id: 'orders', icon: Package, label: 'Заказы' },
+            { id: 'moderation', icon: Shield, label: 'Модерация' }, // 🔥 НОВАЯ КНОПКА
         ].map(tab => (
             <button
                 key={tab.id}
@@ -143,6 +177,10 @@ const Admin = ({ user, initData }) => {
             >
                 <tab.icon size={16} />
                 <span className="text-xs font-bold uppercase tracking-wider">{tab.label}</span>
+                {/* Бейдж если есть новые отзывы */}
+                {tab.id === 'moderation' && pendingReviews.length > 0 && activeSection !== 'moderation' && (
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                )}
             </button>
         ))}
       </div>
@@ -238,6 +276,45 @@ const Admin = ({ user, initData }) => {
                     </div>
                 </div>
             ))}
+        </div>
+      )}
+
+      {/* 🔥 НОВАЯ СЕКЦИЯ МОДЕРАЦИИ */}
+      {activeSection === 'moderation' && (
+        <div className="grid grid-cols-2 gap-4 animate-slide-up">
+            {pendingReviews.length === 0 ? (
+                <div className="col-span-2 text-center py-10 text-gray-500 font-mono text-xs uppercase">
+                    Все чисто.<br/>Новых фото нет.
+                </div>
+            ) : (
+                pendingReviews.map(review => (
+                    <div key={review.id} className="bg-[#111] rounded-xl overflow-hidden border border-white/10 relative">
+                        <img 
+                            src={`https://firmashop-truear.waw0.amvera.tech${review.image_path}`} 
+                            className="w-full h-40 object-cover" 
+                        />
+                        <div className="absolute top-2 right-2 flex gap-2">
+                            {/* Кнопка отклонить */}
+                            <button 
+                                onClick={() => handleReviewAction(review.id, 'reject')}
+                                className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
+                            >
+                                <X size={16} strokeWidth={3} />
+                            </button>
+                            {/* Кнопка одобрить */}
+                            <button 
+                                onClick={() => handleReviewAction(review.id, 'approve')}
+                                className="w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
+                            >
+                                <Check size={16} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="p-2 text-[10px] text-gray-500 font-mono">
+                            User #{review.user_id}
+                        </div>
+                    </div>
+                ))
+            )}
         </div>
       )}
 
