@@ -1,139 +1,138 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader, Camera, Plus, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, Loader, Heart } from 'lucide-react';
 
-// Используем тот же домен API
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech';
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
+const API_URL = `${BASE_URL}/api`;
 
 const Community = ({ user }) => {
   const [reviews, setReviews] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
-  // Скрытый инпут для выбора файла
   const fileInputRef = useRef(null);
 
-  // Загружаем ленту при открытии
+  // Умная ссылка для картинок
+  const getImgUrl = (url) => {
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+  }
+
   useEffect(() => {
     fetchReviews();
   }, []);
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/reviews`);
-      const data = await res.json();
-      setReviews(data);
+      const res = await fetch(`${API_URL}/reviews`);
+      if (res.ok) {
+        setReviews(await res.json());
+      }
     } catch (error) {
-      console.error("Ошибка загрузки ленты:", error);
-    } finally {
-      setIsLoading(false);
+      console.error(error);
     }
   };
 
-  // Клик по кнопке -> клик по скрытому инпуту
-  const triggerFileSelect = () => {
-    if (!user) {
-        alert("Please log in via Telegram to post.");
-        return;
-    }
-    fileInputRef.current.click();
-  };
-
-  // Файл выбран -> загружаем на сервер
-  const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
 
+    // Валидация размера (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert("Файл слишком большой (макс 5MB)");
+        return;
+    }
+
     setIsUploading(true);
-    
-    // Создаем FormData для отправки файла
     const formData = new FormData();
+    
+    // 🔥 ВАЖНО: Добавляем initData
+    const initData = window.Telegram?.WebApp?.initData || "";
+    formData.append('initData', initData);
+    
     formData.append('file', file);
-    // Добавляем ID юзера в URL параметры (как ждет бэкенд)
-    const uploadUrl = new URL(`${API_URL}/api/reviews/upload`);
-    uploadUrl.searchParams.append('telegram_id', user.id);
 
     try {
-        const response = await fetch(uploadUrl.toString(), {
-            method: 'POST',
-            body: formData, // Браузер сам поставит нужные заголовки
-        });
+      const res = await fetch(`${API_URL}/reviews/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-        if (response.ok) {
-            // Вибрация успеха
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-            }
-            // Перезагружаем ленту, чтобы увидеть свое фото
-            fetchReviews();
-            alert("Photo uploaded! It will appear soon.");
-        } else {
-            alert("Upload failed.");
+      if (res.ok) {
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
+        alert("Фото загружено! Оно появится в ленте после проверки модератором.");
+      } else {
+        alert("Ошибка загрузки. Попробуйте другое фото.");
+      }
     } catch (error) {
-        console.error("Upload error:", error);
-        alert("Network error.");
+      console.error(error);
+      alert("Ошибка сети");
     } finally {
-        setIsUploading(false);
-        // Очищаем инпут, чтобы можно было выбрать тот же файл снова
-        event.target.value = null;
+      setIsUploading(false);
+      // Сбрасываем инпут
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   return (
-    <div className="pt-24 pb-24 animate-fade-in min-h-screen">
-        {/* HEADER */}
-        <div className="px-6 mb-8 text-center">
-            <h1 className="text-4xl font-black uppercase tracking-tighter mb-2">
-                Firma<br/><span className="text-gray-500">Community</span>
-            </h1>
-            <p className="text-gray-400 text-xs max-w-xs mx-auto font-mono uppercase tracking-widest">
-                Real people. Real style.
-            </p>
-        </div>
+    <div className="pt-24 pb-24 px-4 animate-fade-in">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 leading-none">
+          Firma<br/><span className="text-gray-600">Community</span>
+        </h1>
+        <p className="text-xs font-mono text-gray-500 uppercase tracking-widest">
+          Реальные люди. Реальный стиль.
+        </p>
+      </div>
 
-        {/* ЛЕНТА */}
-        <div className="px-4">
-            {isLoading ? (
-                 <div className="flex flex-col items-center justify-center py-20 gap-4">
-                   <Loader className="animate-spin text-white" size={32} />
-                   <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Loading Feed...</span>
-                 </div>
-            ) : reviews.length === 0 ? (
-                 // Пустое состояние
-                 <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-500 opacity-50">
-                    <ImageIcon size={48} />
-                    <span className="text-xs font-mono uppercase tracking-widest">Be the first to post</span>
-                 </div>
-            ) : (
-                // Сетка фотографий (Masonry-like, 2 колонки)
-                <div className="columns-2 gap-4 space-y-4">
-                    {reviews.map((review) => (
-                        <div key={review.id} className="break-inside-avoid rounded-xl overflow-hidden bg-[#111] border border-white/5 animate-slide-up">
-                            {/* Важно: Добавляем домен API к пути картинки */}
-                            <img src={`${API_URL}${review.image_path}`} className="w-full h-auto object-cover" loading="lazy" />
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
+      {/* КНОПКА ЗАГРУЗКИ */}
+      <div 
+        onClick={() => fileInputRef.current.click()}
+        className="bg-[#111] border border-dashed border-white/20 rounded-xl p-6 mb-8 flex flex-col items-center justify-center gap-3 cursor-pointer active:scale-95 transition-all"
+      >
+        {isUploading ? (
+            <Loader className="animate-spin text-white" />
+        ) : (
+            <>
+                <Camera size={32} className="text-white" />
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                    Загрузить свой лук
+                </span>
+            </>
+        )}
+        <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileSelect} 
+            className="hidden" 
+            accept="image/*" 
+        />
+      </div>
 
-        {/* КНОПКА ЗАГРУЗКИ (Плавающая) */}
-        <div className="fixed bottom-24 right-6 z-40">
-            <button
-                onClick={triggerFileSelect}
-                disabled={isUploading}
-                className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all disabled:opacity-50"
-            >
-                {isUploading ? <Loader className="animate-spin" size={24} /> : <Camera size={24} />}
-            </button>
-            {/* Скрытый инпут для файлов (принимает только картинки) */}
-            <input 
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept="image/png, image/jpeg, image/jpg"
-                className="hidden"
+      {/* ЛЕНТА */}
+      <div className="masonry-grid space-y-4">
+        {reviews.map((review) => (
+          <div key={review.id} className="bg-[#111] rounded-xl overflow-hidden border border-white/5 animate-slide-up">
+            <img 
+                src={getImgUrl(review.image_path)} 
+                className="w-full h-auto object-cover" 
+                loading="lazy"
             />
-        </div>
+            <div className="p-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center text-[10px]">👤</div>
+                    <span className="text-xs font-bold text-gray-400">Пользователь #{review.user_id}</span>
+                </div>
+                {/* Здесь можно добавить лайки в будущем */}
+            </div>
+          </div>
+        ))}
+        
+        {reviews.length === 0 && (
+            <div className="text-center py-10 text-gray-600 text-xs font-mono uppercase">
+                Лента пока пуста.<br/>Стань первым!
+            </div>
+        )}
+      </div>
     </div>
   );
 };
