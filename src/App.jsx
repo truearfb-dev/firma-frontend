@@ -9,7 +9,7 @@ import Admin from './Admin'
 
 const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
 const API_URL = `${BASE_URL}/api`;
-const BOT_USERNAME = 'firma_shop_bot'; 
+const BOT_USERNAME = 'Firma_projectBot'; 
 
 function App() {
   const [products, setProducts] = useState([])
