@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
@@ -8,7 +8,6 @@ const Admin = ({ user, initData }) => {
   const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
   const [brands, setBrands] = useState([]);
   const [orders, setOrders] = useState([]);
-  // 🔥 НОВЫЙ STATE ДЛЯ МОДЕРАЦИИ
   const [pendingReviews, setPendingReviews] = useState([]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +22,9 @@ const Admin = ({ user, initData }) => {
   // BRAND FORM
   const [brandName, setBrandName] = useState('');
   const [brandFile, setBrandFile] = useState(null);
+  
+  // 🔥 РЕЖИМ РЕДАКТИРОВАНИЯ
+  const [editingBrand, setEditingBrand] = useState(null); // Если не null, значит редактируем этот бренд
 
   const fileInputRef = useRef(null);
   const brandInputRef = useRef(null);
@@ -36,7 +38,6 @@ const Admin = ({ user, initData }) => {
 
   useEffect(() => {
     if (activeSection === 'orders') fetchOrders();
-    // 🔥 ЗАГРУЖАЕМ СПАМ ПРИ ВХОДЕ В МОДЕРАЦИЮ
     if (activeSection === 'moderation') fetchPendingReviews();
   }, [activeSection]);
 
@@ -63,7 +64,6 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   };
 
-  // 🔥 ЗАГРУЗКА ПЕНДИНГ ОТЗЫВОВ
   const fetchPendingReviews = async () => {
     try {
         const encodedInit = encodeURIComponent(initData);
@@ -100,20 +100,30 @@ const Admin = ({ user, initData }) => {
     setIsSubmitting(false);
   };
 
-  const handleCreateBrand = async (e) => {
+  // 🔥 ЛОГИКА СОЗДАНИЯ ИЛИ ОБНОВЛЕНИЯ БРЕНДА
+  const handleBrandSubmit = async (e) => {
     e.preventDefault();
-    if (!brandFile || !brandName) return alert("Заполните все поля");
+    if (!brandName) return alert("Введите название бренда");
+    // Если создаем новый - фото обязательно. Если редактируем - фото опционально.
+    if (!editingBrand && !brandFile) return alert("Загрузите логотип");
+
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('initData', initData); 
     formData.append('name', brandName);
-    formData.append('file', brandFile);
+    if (brandFile) formData.append('file', brandFile); // Добавляем файл только если он есть
+
+    let url = `${API_URL}/admin/brands`;
+    if (editingBrand) {
+        url = `${API_URL}/admin/brands/update`;
+        formData.append('brand_id', editingBrand.id);
+    }
 
     try {
-        const res = await fetch(`${API_URL}/admin/brands`, { method: 'POST', body: formData });
+        const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
-            alert("Бренд создан!");
-            setBrandName(''); setBrandFile(null);
+            alert(editingBrand ? "Бренд обновлен!" : "Бренд создан!");
+            setBrandName(''); setBrandFile(null); setEditingBrand(null); // Сброс
             fetchBrands();
         } else {
             const err = await res.json();
@@ -121,6 +131,21 @@ const Admin = ({ user, initData }) => {
         }
     } catch (e) { alert("Ошибка сети"); }
     setIsSubmitting(false);
+  };
+
+  // Нажали на карандаш
+  const startEditBrand = (brand) => {
+    setEditingBrand(brand);
+    setBrandName(brand.name);
+    setBrandFile(null); // Файл сбрасываем, юзер загрузит новый если захочет
+    // Скролл наверх к форме
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingBrand(null);
+    setBrandName('');
+    setBrandFile(null);
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
@@ -137,9 +162,7 @@ const Admin = ({ user, initData }) => {
       } catch (e) { console.error(e); }
   }
 
-  // 🔥 ДЕЙСТВИЯ МОДЕРАЦИИ
   const handleReviewAction = async (reviewId, action) => {
-    // action = 'approve' | 'reject'
     try {
         const res = await fetch(`${API_URL}/admin/reviews/${action}`, {
             method: 'POST',
@@ -147,7 +170,6 @@ const Admin = ({ user, initData }) => {
             body: JSON.stringify({ initData: initData, review_id: reviewId })
         });
         if (res.ok) {
-            // Убираем из списка локально
             setPendingReviews(prev => prev.filter(r => r.id !== reviewId));
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
@@ -164,7 +186,7 @@ const Admin = ({ user, initData }) => {
             { id: 'products', icon: Plus, label: 'Товар' },
             { id: 'brands', icon: Tag, label: 'Бренд' },
             { id: 'orders', icon: Package, label: 'Заказы' },
-            { id: 'moderation', icon: Shield, label: 'Модерация' }, // 🔥 НОВАЯ КНОПКА
+            { id: 'moderation', icon: Shield, label: 'Модерация' },
         ].map(tab => (
             <button
                 key={tab.id}
@@ -177,7 +199,6 @@ const Admin = ({ user, initData }) => {
             >
                 <tab.icon size={16} />
                 <span className="text-xs font-bold uppercase tracking-wider">{tab.label}</span>
-                {/* Бейдж если есть новые отзывы */}
                 {tab.id === 'moderation' && pendingReviews.length > 0 && activeSection !== 'moderation' && (
                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 )}
@@ -221,27 +242,65 @@ const Admin = ({ user, initData }) => {
       )}
 
       {activeSection === 'brands' && (
-        <form onSubmit={handleCreateBrand} className="space-y-4 animate-slide-up">
-            <div onClick={() => brandInputRef.current.click()} className="w-24 h-24 mx-auto bg-[#111] border border-dashed border-white/20 rounded-full flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-                {brandFile ? <img src={URL.createObjectURL(brandFile)} className="w-full h-full object-cover" /> : <Tag className="text-gray-500" />}
-                <input type="file" ref={brandInputRef} onChange={e => setBrandFile(e.target.files[0])} className="hidden" accept="image/*" />
-            </div>
-            <input type="text" placeholder="Название бренда (Nike)" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
-            <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Создать бренд"}</button>
-            <div className="pt-8">
+        <div className="space-y-6 animate-slide-up">
+            {/* ФОРМА (ОБЩАЯ ДЛЯ СОЗДАНИЯ И РЕДАКТИРОВАНИЯ) */}
+            <form onSubmit={handleBrandSubmit} className={`space-y-4 p-4 rounded-xl border ${editingBrand ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-transparent border-transparent'}`}>
+                {editingBrand && (
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-yellow-500 uppercase">Редактирование: {editingBrand.name}</span>
+                        <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 flex items-center gap-1 hover:text-white"><RotateCcw size={12}/> Отмена</button>
+                    </div>
+                )}
+
+                <div onClick={() => brandInputRef.current.click()} className="w-24 h-24 mx-auto bg-[#111] border border-dashed border-white/20 rounded-full flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
+                    {/* Если есть новый файл - показываем его */}
+                    {brandFile ? (
+                        <img src={URL.createObjectURL(brandFile)} className="w-full h-full object-cover" />
+                    ) : (
+                        /* Если нет файла, но есть редактируемый бренд - показываем старое фото */
+                        editingBrand ? (
+                             <img src={`https://firmashop-truear.waw0.amvera.tech${editingBrand.logo_url}`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                        ) : (
+                             <Tag className="text-gray-500" />
+                        )
+                    )}
+                    {/* Подсказка */}
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                        <Upload size={16} className="text-white"/>
+                    </div>
+                    <input type="file" ref={brandInputRef} onChange={e => setBrandFile(e.target.files[0])} className="hidden" accept="image/*" />
+                </div>
+
+                <input type="text" placeholder="Название бренда" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
+                
+                <button disabled={isSubmitting} className={`w-full font-bold py-4 rounded-xl uppercase ${editingBrand ? 'bg-yellow-500 text-black' : 'bg-white text-black'}`}>
+                    {isSubmitting ? <Loader className="animate-spin mx-auto"/> : (editingBrand ? "Сохранить изменения" : "Создать бренд")}
+                </button>
+            </form>
+            
+            <div className="pt-4 border-t border-white/10">
                 <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Существующие бренды</h3>
                 <div className="flex gap-3 flex-wrap">
                     {brands.map(b => (
-                        <div key={b.id} className="flex items-center gap-2 bg-[#111] px-3 py-2 rounded-lg border border-white/5">
-                            <div className="w-6 h-6 rounded-full bg-white/10 overflow-hidden"><img src={`${API_URL.replace('/api', '')}${b.logo_url}`} className="w-full h-full object-cover"/></div>
+                        <div key={b.id} className="group relative flex items-center gap-2 bg-[#111] px-3 py-2 rounded-lg border border-white/5 pr-8">
+                            <div className="w-6 h-6 rounded-full bg-white/10 overflow-hidden"><img src={`https://firmashop-truear.waw0.amvera.tech${b.logo_url}`} className="w-full h-full object-cover"/></div>
                             <span className="text-xs font-bold uppercase">{b.name}</span>
+                            
+                            {/* КНОПКА РЕДАКТИРОВАНИЯ */}
+                            <button 
+                                onClick={() => startEditBrand(b)}
+                                className="absolute right-1 p-1.5 text-gray-600 hover:text-white transition-colors"
+                            >
+                                <Edit2 size={12} />
+                            </button>
                         </div>
                     ))}
                 </div>
             </div>
-        </form>
+        </div>
       )}
 
+      {/* ОСТАЛЬНЫЕ СЕКЦИИ (БЕЗ ИЗМЕНЕНИЙ) */}
       {activeSection === 'orders' && (
         <div className="space-y-4 animate-slide-up">
             {orders.map(order => (
@@ -279,7 +338,6 @@ const Admin = ({ user, initData }) => {
         </div>
       )}
 
-      {/* 🔥 НОВАЯ СЕКЦИЯ МОДЕРАЦИИ */}
       {activeSection === 'moderation' && (
         <div className="grid grid-cols-2 gap-4 animate-slide-up">
             {pendingReviews.length === 0 ? (
@@ -294,14 +352,12 @@ const Admin = ({ user, initData }) => {
                             className="w-full h-40 object-cover" 
                         />
                         <div className="absolute top-2 right-2 flex gap-2">
-                            {/* Кнопка отклонить */}
                             <button 
                                 onClick={() => handleReviewAction(review.id, 'reject')}
                                 className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
                             >
                                 <X size={16} strokeWidth={3} />
                             </button>
-                            {/* Кнопка одобрить */}
                             <button 
                                 onClick={() => handleReviewAction(review.id, 'approve')}
                                 className="w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
