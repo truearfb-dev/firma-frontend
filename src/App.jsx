@@ -27,7 +27,7 @@ function App() {
   const [isOrdersOpen, setIsOrdersOpen] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedCategory, setSelectedCategory] = useState('Все')
   const [selectedBrand, setSelectedBrand] = useState(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
