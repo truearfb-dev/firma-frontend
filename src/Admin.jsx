@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw } from 'lucide-react';
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
 
 const Admin = ({ user, initData }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
   const [brands, setBrands] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]); // 🔥 СПИСОК ТОВАРОВ
   const [pendingReviews, setPendingReviews] = useState([]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,15 +17,17 @@ const Admin = ({ user, initData }) => {
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
   const [productCategory, setProductCategory] = useState('Clothing');
+  const [productSizes, setProductSizes] = useState('S,M,L'); // Добавил стейт для размеров
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [productFile, setProductFile] = useState(null);
   
+  // 🔥 РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
+  const [editingProduct, setEditingProduct] = useState(null);
+
   // BRAND FORM
   const [brandName, setBrandName] = useState('');
   const [brandFile, setBrandFile] = useState(null);
-  
-  // 🔥 РЕЖИМ РЕДАКТИРОВАНИЯ
-  const [editingBrand, setEditingBrand] = useState(null); // Если не null, значит редактируем этот бренд
+  const [editingBrand, setEditingBrand] = useState(null);
 
   const fileInputRef = useRef(null);
   const brandInputRef = useRef(null);
@@ -34,6 +37,7 @@ const Admin = ({ user, initData }) => {
   useEffect(() => {
     fetchStats();
     fetchBrands();
+    fetchProducts(); // 🔥 ГРУЗИМ ТОВАРЫ ВСЕГДА (ДЛЯ СПИСКА)
   }, []);
 
   useEffect(() => {
@@ -56,6 +60,14 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   };
 
+  // 🔥 ЗАГРУЗКА ТОВАРОВ
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`${API_URL}/products`);
+      if (res.ok) setProducts(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
   const fetchOrders = async () => {
     try {
       const encodedInit = encodeURIComponent(initData);
@@ -74,24 +86,35 @@ const Admin = ({ user, initData }) => {
 
   // --- ACTIONS ---
 
-  const handleCreateProduct = async (e) => {
+  // 🔥 СОЗДАНИЕ ИЛИ ОБНОВЛЕНИЕ ТОВАРА
+  const handleProductSubmit = async (e) => {
     e.preventDefault();
-    if (!productFile || !productName || !productPrice) return alert("Заполните все поля");
+    if (!productName || !productPrice) return alert("Заполните название и цену");
+    if (!editingProduct && !productFile) return alert("Загрузите фото товара");
+
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('initData', initData); 
     formData.append('name', productName);
     formData.append('price', productPrice);
     formData.append('category', productCategory);
+    formData.append('sizes', productSizes);
     if (selectedBrandId) formData.append('brand_id', selectedBrandId);
-    formData.append('sizes', 'S,M,L,XL');
-    formData.append('file', productFile);
+    if (productFile) formData.append('file', productFile);
+
+    let url = `${API_URL}/admin/products`;
+    if (editingProduct) {
+        url = `${API_URL}/admin/products/update`;
+        formData.append('product_id', editingProduct.id);
+    }
 
     try {
-        const res = await fetch(`${API_URL}/admin/products`, { method: 'POST', body: formData });
+        const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
-            alert("Товар создан!");
-            setProductName(''); setProductPrice(''); setProductFile(null);
+            alert(editingProduct ? "Товар обновлен!" : "Товар создан!");
+            // Сброс
+            setProductName(''); setProductPrice(''); setProductFile(null); setEditingProduct(null); setProductSizes('S,M,L');
+            fetchProducts();
         } else {
             const err = await res.json();
             alert("Ошибка: " + (err.detail || "Неизвестная ошибка"));
@@ -100,18 +123,32 @@ const Admin = ({ user, initData }) => {
     setIsSubmitting(false);
   };
 
-  // 🔥 ЛОГИКА СОЗДАНИЯ ИЛИ ОБНОВЛЕНИЯ БРЕНДА
+  const startEditProduct = (prod) => {
+      setEditingProduct(prod);
+      setProductName(prod.name);
+      setProductPrice(prod.price);
+      setProductCategory(prod.category || 'Clothing');
+      setProductSizes(prod.sizes || 'S,M,L');
+      setSelectedBrandId(prod.brand_id || '');
+      setProductFile(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const cancelEditProduct = () => {
+      setEditingProduct(null);
+      setProductName(''); setProductPrice(''); setProductFile(null); setProductSizes('S,M,L');
+  }
+
   const handleBrandSubmit = async (e) => {
     e.preventDefault();
     if (!brandName) return alert("Введите название бренда");
-    // Если создаем новый - фото обязательно. Если редактируем - фото опционально.
     if (!editingBrand && !brandFile) return alert("Загрузите логотип");
 
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('initData', initData); 
     formData.append('name', brandName);
-    if (brandFile) formData.append('file', brandFile); // Добавляем файл только если он есть
+    if (brandFile) formData.append('file', brandFile); 
 
     let url = `${API_URL}/admin/brands`;
     if (editingBrand) {
@@ -123,7 +160,7 @@ const Admin = ({ user, initData }) => {
         const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
             alert(editingBrand ? "Бренд обновлен!" : "Бренд создан!");
-            setBrandName(''); setBrandFile(null); setEditingBrand(null); // Сброс
+            setBrandName(''); setBrandFile(null); setEditingBrand(null);
             fetchBrands();
         } else {
             const err = await res.json();
@@ -133,16 +170,14 @@ const Admin = ({ user, initData }) => {
     setIsSubmitting(false);
   };
 
-  // Нажали на карандаш
   const startEditBrand = (brand) => {
     setEditingBrand(brand);
     setBrandName(brand.name);
-    setBrandFile(null); // Файл сбрасываем, юзер загрузит новый если захочет
-    // Скролл наверх к форме
+    setBrandFile(null); 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const cancelEdit = () => {
+  const cancelEditBrand = () => {
     setEditingBrand(null);
     setBrandName('');
     setBrandFile(null);
@@ -174,6 +209,11 @@ const Admin = ({ user, initData }) => {
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
     } catch (e) { console.error(e); }
+  }
+
+  const getImgUrl = (url) => {
+    if (!url) return null;
+    return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
   }
 
   return (
@@ -224,47 +264,88 @@ const Admin = ({ user, initData }) => {
       )}
 
       {activeSection === 'products' && (
-        <form onSubmit={handleCreateProduct} className="space-y-4 animate-slide-up">
-            <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#111] border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center cursor-pointer">
-                {productFile ? <img src={URL.createObjectURL(productFile)} className="w-full h-full object-cover rounded-xl" /> : <Upload className="text-gray-500" />}
-                <input type="file" ref={fileInputRef} onChange={e => setProductFile(e.target.files[0])} className="hidden" accept="image/*" />
+        <div className="space-y-6 animate-slide-up">
+            <form onSubmit={handleProductSubmit} className={`space-y-4 p-4 rounded-xl border ${editingProduct ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-transparent border-transparent'}`}>
+                {editingProduct && (
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-yellow-500 uppercase">Редактирование: {editingProduct.name}</span>
+                        <button type="button" onClick={cancelEditProduct} className="text-xs text-gray-500 flex items-center gap-1 hover:text-white"><RotateCcw size={12}/> Отмена</button>
+                    </div>
+                )}
+                
+                <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#111] border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center cursor-pointer group relative overflow-hidden">
+                    {productFile ? (
+                        <img src={URL.createObjectURL(productFile)} className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                        editingProduct ? (
+                            <img src={getImgUrl(editingProduct.image_url)} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                        ) : (
+                            <Upload className="text-gray-500" />
+                        )
+                    )}
+                    <input type="file" ref={fileInputRef} onChange={e => setProductFile(e.target.files[0])} className="hidden" accept="image/*" />
+                </div>
+
+                <input type="text" placeholder="Название товара" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+                
+                <div className="flex gap-4">
+                    <input type="number" placeholder="Цена (₽)" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+                    <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="bg-[#111] border border-white/10 rounded-xl px-4 text-white outline-none w-1/2">
+                        <option value="">Без бренда</option>
+                        {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                </div>
+                 <input type="text" placeholder="Размеры (S,M,L)" value={productSizes} onChange={e => setProductSizes(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+
+                <button disabled={isSubmitting} className={`w-full font-bold py-4 rounded-xl uppercase ${editingProduct ? 'bg-yellow-500 text-black' : 'bg-white text-black'}`}>
+                    {isSubmitting ? <Loader className="animate-spin mx-auto"/> : (editingProduct ? "Сохранить изменения" : "Создать товар")}
+                </button>
+            </form>
+
+            <div className="pt-4 border-t border-white/10">
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Список товаров ({products.length})</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    {products.map(p => (
+                        <div key={p.id} className="bg-[#111] rounded-lg p-2 border border-white/5 relative group">
+                            <div className="aspect-square bg-black rounded overflow-hidden mb-2">
+                                <img src={getImgUrl(p.image_url)} className="w-full h-full object-cover"/>
+                            </div>
+                            <div className="text-[10px] font-bold uppercase truncate">{p.name}</div>
+                            <div className="text-xs font-mono text-gray-400">{p.price} ₽</div>
+                            
+                            <button 
+                                onClick={() => startEditProduct(p)}
+                                className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-yellow-500 hover:text-black transition-all"
+                            >
+                                <Edit2 size={12} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
             </div>
-            <input type="text" placeholder="Название товара" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
-            <div className="flex gap-4">
-                <input type="number" placeholder="Цена (₽)" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
-                <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="bg-[#111] border border-white/10 rounded-xl px-4 text-white outline-none w-1/2">
-                    <option value="">Без бренда</option>
-                    {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-            </div>
-            <button disabled={isSubmitting} className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase">{isSubmitting ? <Loader className="animate-spin mx-auto"/> : "Создать товар"}</button>
-        </form>
+        </div>
       )}
 
       {activeSection === 'brands' && (
         <div className="space-y-6 animate-slide-up">
-            {/* ФОРМА (ОБЩАЯ ДЛЯ СОЗДАНИЯ И РЕДАКТИРОВАНИЯ) */}
             <form onSubmit={handleBrandSubmit} className={`space-y-4 p-4 rounded-xl border ${editingBrand ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-transparent border-transparent'}`}>
                 {editingBrand && (
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-xs font-bold text-yellow-500 uppercase">Редактирование: {editingBrand.name}</span>
-                        <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 flex items-center gap-1 hover:text-white"><RotateCcw size={12}/> Отмена</button>
+                        <button type="button" onClick={cancelEditBrand} className="text-xs text-gray-500 flex items-center gap-1 hover:text-white"><RotateCcw size={12}/> Отмена</button>
                     </div>
                 )}
 
                 <div onClick={() => brandInputRef.current.click()} className="w-24 h-24 mx-auto bg-[#111] border border-dashed border-white/20 rounded-full flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
-                    {/* Если есть новый файл - показываем его */}
                     {brandFile ? (
                         <img src={URL.createObjectURL(brandFile)} className="w-full h-full object-cover" />
                     ) : (
-                        /* Если нет файла, но есть редактируемый бренд - показываем старое фото */
                         editingBrand ? (
                              <img src={`https://firmashop-truear.waw0.amvera.tech${editingBrand.logo_url}`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                         ) : (
                              <Tag className="text-gray-500" />
                         )
                     )}
-                    {/* Подсказка */}
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                         <Upload size={16} className="text-white"/>
                     </div>
@@ -286,7 +367,6 @@ const Admin = ({ user, initData }) => {
                             <div className="w-6 h-6 rounded-full bg-white/10 overflow-hidden"><img src={`https://firmashop-truear.waw0.amvera.tech${b.logo_url}`} className="w-full h-full object-cover"/></div>
                             <span className="text-xs font-bold uppercase">{b.name}</span>
                             
-                            {/* КНОПКА РЕДАКТИРОВАНИЯ */}
                             <button 
                                 onClick={() => startEditBrand(b)}
                                 className="absolute right-1 p-1.5 text-gray-600 hover:text-white transition-colors"
