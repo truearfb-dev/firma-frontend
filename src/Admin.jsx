@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw, Search } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
 
@@ -17,10 +17,13 @@ const Admin = ({ user, initData }) => {
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
   const [productCategory, setProductCategory] = useState('Clothing');
-  const [productSizes, setProductSizes] = useState('S,M,L'); // Добавил стейт для размеров
+  const [productSizes, setProductSizes] = useState('S,M,L');
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [productFile, setProductFile] = useState(null);
   
+  // 🔥 ПОИСК ПО ТОВАРАМ
+  const [productSearch, setProductSearch] = useState('');
+
   // 🔥 РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
   const [editingProduct, setEditingProduct] = useState(null);
 
@@ -37,7 +40,7 @@ const Admin = ({ user, initData }) => {
   useEffect(() => {
     fetchStats();
     fetchBrands();
-    fetchProducts(); // 🔥 ГРУЗИМ ТОВАРЫ ВСЕГДА (ДЛЯ СПИСКА)
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -60,7 +63,6 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   };
 
-  // 🔥 ЗАГРУЗКА ТОВАРОВ
   const fetchProducts = async () => {
     try {
       const res = await fetch(`${API_URL}/products`);
@@ -86,7 +88,6 @@ const Admin = ({ user, initData }) => {
 
   // --- ACTIONS ---
 
-  // 🔥 СОЗДАНИЕ ИЛИ ОБНОВЛЕНИЕ ТОВАРА
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     if (!productName || !productPrice) return alert("Заполните название и цену");
@@ -112,7 +113,6 @@ const Admin = ({ user, initData }) => {
         const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
             alert(editingProduct ? "Товар обновлен!" : "Товар создан!");
-            // Сброс
             setProductName(''); setProductPrice(''); setProductFile(null); setEditingProduct(null); setProductSizes('S,M,L');
             fetchProducts();
         } else {
@@ -216,6 +216,15 @@ const Admin = ({ user, initData }) => {
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
   }
 
+  // 🔥 ФИЛЬТРАЦИЯ ТОВАРОВ
+  const filteredProducts = products.filter(p => {
+    const term = productSearch.toLowerCase();
+    const name = p.name ? p.name.toLowerCase() : '';
+    const desc = p.description ? p.description.toLowerCase() : '';
+    const cat = p.category ? p.category.toLowerCase() : '';
+    return name.includes(term) || desc.includes(term) || cat.includes(term);
+  });
+
   return (
     <div className="pt-24 pb-24 animate-fade-in px-4">
       <h1 className="text-3xl font-black uppercase mb-6">РЕЖИМ БОГА <span className="text-red-500">.</span></h1>
@@ -303,24 +312,45 @@ const Admin = ({ user, initData }) => {
             </form>
 
             <div className="pt-4 border-t border-white/10">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Список товаров ({products.length})</h3>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase">Список товаров ({filteredProducts.length})</h3>
+                </div>
+                
+                {/* 🔥 ПОЛЕ ПОИСКА */}
+                <div className="relative mb-6">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                    <input 
+                        type="text" 
+                        placeholder="Найти товар..." 
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-white/30 outline-none transition-all"
+                    />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                    {products.map(p => (
-                        <div key={p.id} className="bg-[#111] rounded-lg p-2 border border-white/5 relative group">
-                            <div className="aspect-square bg-black rounded overflow-hidden mb-2">
-                                <img src={getImgUrl(p.image_url)} className="w-full h-full object-cover"/>
+                    {filteredProducts.length > 0 ? (
+                        filteredProducts.map(p => (
+                            <div key={p.id} className="bg-[#111] rounded-lg p-2 border border-white/5 relative group animate-slide-up">
+                                <div className="aspect-square bg-black rounded overflow-hidden mb-2">
+                                    <img src={getImgUrl(p.image_url)} className="w-full h-full object-cover"/>
+                                </div>
+                                <div className="text-[10px] font-bold uppercase truncate">{p.name}</div>
+                                <div className="text-xs font-mono text-gray-400">{p.price} ₽</div>
+                                
+                                <button 
+                                    onClick={() => startEditProduct(p)}
+                                    className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-yellow-500 hover:text-black transition-all"
+                                >
+                                    <Edit2 size={12} />
+                                </button>
                             </div>
-                            <div className="text-[10px] font-bold uppercase truncate">{p.name}</div>
-                            <div className="text-xs font-mono text-gray-400">{p.price} ₽</div>
-                            
-                            <button 
-                                onClick={() => startEditProduct(p)}
-                                className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-yellow-500 hover:text-black transition-all"
-                            >
-                                <Edit2 size={12} />
-                            </button>
+                        ))
+                    ) : (
+                        <div className="col-span-2 text-center py-8 text-gray-500 font-mono text-xs">
+                            Ничего не найдено
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>
