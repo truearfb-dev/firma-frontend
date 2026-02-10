@@ -11,11 +11,9 @@ const ImageSlider = ({ imagesStr }) => {
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  
-  // 🖐 STATE ДЛЯ СВАЙПОВ
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  const minSwipeDistance = 50; // Минимальное расстояние для свайпа
+  const minSwipeDistance = 50;
 
   const next = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
@@ -25,7 +23,6 @@ const ImageSlider = ({ imagesStr }) => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // 🔥 ОБРАБОТЧИКИ СВАЙПОВ
   const onTouchStart = (e) => {
     setTouchEnd(null); 
     setTouchStart(e.targetTouches[0].clientX);
@@ -41,12 +38,8 @@ const ImageSlider = ({ imagesStr }) => {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    if (isLeftSwipe) {
-      next(); // Свайпнули влево -> следующая картинка
-    }
-    if (isRightSwipe) {
-      prev(); // Свайпнули вправо -> предыдущая
-    }
+    if (isLeftSwipe) next();
+    if (isRightSwipe) prev();
   };
 
   if (images.length === 1) {
@@ -63,10 +56,10 @@ const ImageSlider = ({ imagesStr }) => {
       <img 
         src={images[currentIndex]} 
         className="w-full h-full object-cover transition-all duration-300"
-        draggable={false} // Чтобы не перетаскивалась как файл
+        draggable={false}
       />
       
-      {/* Стрелки (на ПК удобнее) */}
+      {/* Стрелки */}
       <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
         <ChevronLeft size={20} />
       </button>
@@ -74,7 +67,7 @@ const ImageSlider = ({ imagesStr }) => {
         <ChevronRight size={20} />
       </button>
 
-      {/* Индикаторы (Точки) */}
+      {/* Индикаторы */}
       <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
         {images.map((_, idx) => (
             <div 

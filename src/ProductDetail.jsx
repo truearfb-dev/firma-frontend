@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ShoppingBag, AlertCircle } from 'lucide-react';
-import ImageSlider from './ImageSlider'; // 🔥 ИМПОРТИРУЕМ СЛАЙДЕР
+import ImageSlider from './ImageSlider'; 
 
 const ProductDetail = ({ product, onBack, onAddToCart }) => {
   const [selectedSize, setSelectedSize] = useState(null);
@@ -25,7 +25,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
       </button>
 
       <div className="w-full h-[50vh] relative bg-[#111]">
-        {/* 🔥 ИСПОЛЬЗУЕМ СЛАЙДЕР ВМЕСТО ОБЫЧНОГО IMG */}
+        {/* 🔥 СЛАЙДЕР ВМЕСТО КАРТИНКИ */}
         <ImageSlider imagesStr={product.image_url} />
         
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none" />
@@ -97,7 +97,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
           </span>
         </button>
       </div>
-
     </div>
   );
 };
