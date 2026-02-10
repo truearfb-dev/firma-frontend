@@ -8,7 +8,7 @@ const Admin = ({ user, initData }) => {
   const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
   const [brands, setBrands] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]); // 🔥 СПИСОК ТОВАРОВ
+  const [products, setProducts] = useState([]); 
   const [pendingReviews, setPendingReviews] = useState([]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,12 +19,12 @@ const Admin = ({ user, initData }) => {
   const [productCategory, setProductCategory] = useState('Clothing');
   const [productSizes, setProductSizes] = useState('S,M,L');
   const [selectedBrandId, setSelectedBrandId] = useState('');
-  const [productFile, setProductFile] = useState(null);
+  const [productFiles, setProductFiles] = useState([]); // 🔥 МАССИВ ФАЙЛОВ
   
-  // 🔥 ПОИСК ПО ТОВАРАМ
+  // ПОИСК ПО ТОВАРАМ
   const [productSearch, setProductSearch] = useState('');
 
-  // 🔥 РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
+  // РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
   const [editingProduct, setEditingProduct] = useState(null);
 
   // BRAND FORM
@@ -91,7 +91,7 @@ const Admin = ({ user, initData }) => {
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     if (!productName || !productPrice) return alert("Заполните название и цену");
-    if (!editingProduct && !productFile) return alert("Загрузите фото товара");
+    if (!editingProduct && productFiles.length === 0) return alert("Загрузите фото товара");
 
     setIsSubmitting(true);
     const formData = new FormData();
@@ -101,7 +101,13 @@ const Admin = ({ user, initData }) => {
     formData.append('category', productCategory);
     formData.append('sizes', productSizes);
     if (selectedBrandId) formData.append('brand_id', selectedBrandId);
-    if (productFile) formData.append('file', productFile);
+    
+    // 🔥 ОТПРАВЛЯЕМ МАССИВ ФАЙЛОВ
+    if (productFiles.length > 0) {
+        for (let i = 0; i < productFiles.length; i++) {
+            formData.append('files', productFiles[i]);
+        }
+    }
 
     let url = `${API_URL}/admin/products`;
     if (editingProduct) {
@@ -113,7 +119,7 @@ const Admin = ({ user, initData }) => {
         const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
             alert(editingProduct ? "Товар обновлен!" : "Товар создан!");
-            setProductName(''); setProductPrice(''); setProductFile(null); setEditingProduct(null); setProductSizes('S,M,L');
+            setProductName(''); setProductPrice(''); setProductFiles([]); setEditingProduct(null); setProductSizes('S,M,L');
             fetchProducts();
         } else {
             const err = await res.json();
@@ -130,13 +136,13 @@ const Admin = ({ user, initData }) => {
       setProductCategory(prod.category || 'Clothing');
       setProductSizes(prod.sizes || 'S,M,L');
       setSelectedBrandId(prod.brand_id || '');
-      setProductFile(null);
+      setProductFiles([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const cancelEditProduct = () => {
       setEditingProduct(null);
-      setProductName(''); setProductPrice(''); setProductFile(null); setProductSizes('S,M,L');
+      setProductName(''); setProductPrice(''); setProductFiles([]); setProductSizes('S,M,L');
   }
 
   const handleBrandSubmit = async (e) => {
@@ -213,10 +219,10 @@ const Admin = ({ user, initData }) => {
 
   const getImgUrl = (url) => {
     if (!url) return null;
+    if (url.includes(',')) url = url.split(',')[0]; // Берем первую картинку для превью
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
   }
 
-  // 🔥 ФИЛЬТРАЦИЯ ТОВАРОВ
   const filteredProducts = products.filter(p => {
     const term = productSearch.toLowerCase();
     const name = p.name ? p.name.toLowerCase() : '';
@@ -283,16 +289,24 @@ const Admin = ({ user, initData }) => {
                 )}
                 
                 <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#111] border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center cursor-pointer group relative overflow-hidden">
-                    {productFile ? (
-                        <img src={URL.createObjectURL(productFile)} className="w-full h-full object-cover rounded-xl" />
+                    {productFiles.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-1 w-full h-full">
+                           {Array.from(productFiles).slice(0,4).map((f, i) => (
+                             <img key={i} src={URL.createObjectURL(f)} className="w-full h-full object-cover" />
+                           ))}
+                        </div>
                     ) : (
                         editingProduct ? (
                             <img src={getImgUrl(editingProduct.image_url)} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                         ) : (
-                            <Upload className="text-gray-500" />
+                            <div className="flex flex-col items-center gap-2">
+                                <Upload className="text-gray-500" />
+                                <span className="text-[10px] text-gray-500">Можно выбрать несколько</span>
+                            </div>
                         )
                     )}
-                    <input type="file" ref={fileInputRef} onChange={e => setProductFile(e.target.files[0])} className="hidden" accept="image/*" />
+                    {/* 🔥 ВАЖНО: multiple */}
+                    <input type="file" multiple ref={fileInputRef} onChange={e => setProductFiles(e.target.files)} className="hidden" accept="image/*" />
                 </div>
 
                 <input type="text" placeholder="Название товара" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
@@ -316,7 +330,6 @@ const Admin = ({ user, initData }) => {
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Список товаров ({filteredProducts.length})</h3>
                 </div>
                 
-                {/* 🔥 ПОЛЕ ПОИСКА */}
                 <div className="relative mb-6">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                     <input 
@@ -356,6 +369,7 @@ const Admin = ({ user, initData }) => {
         </div>
       )}
 
+      {/* ОСТАЛЬНЫЕ СЕКЦИИ (БЕЗ ИЗМЕНЕНИЙ) */}
       {activeSection === 'brands' && (
         <div className="space-y-6 animate-slide-up">
             <form onSubmit={handleBrandSubmit} className={`space-y-4 p-4 rounded-xl border ${editingBrand ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-transparent border-transparent'}`}>
@@ -410,7 +424,6 @@ const Admin = ({ user, initData }) => {
         </div>
       )}
 
-      {/* ОСТАЛЬНЫЕ СЕКЦИИ (БЕЗ ИЗМЕНЕНИЙ) */}
       {activeSection === 'orders' && (
         <div className="space-y-4 animate-slide-up">
             {orders.map(order => (

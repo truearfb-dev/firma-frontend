@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ShoppingBag, AlertCircle } from 'lucide-react';
-
-const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
+import ImageSlider from './ImageSlider'; // 🔥 ИМПОРТИРУЕМ СЛАЙДЕР
 
 const ProductDetail = ({ product, onBack, onAddToCart }) => {
   const [selectedSize, setSelectedSize] = useState(null);
@@ -16,10 +15,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     onAddToCart(product, selectedSize);
   };
 
-  const imgUrl = product.image_url 
-    ? (product.image_url.startsWith('http') ? product.image_url : `${BASE_URL}${product.image_url}`)
-    : null;
-
   return (
     <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in pb-24">
       <button 
@@ -30,8 +25,10 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
       </button>
 
       <div className="w-full h-[50vh] relative bg-[#111]">
-        {imgUrl && <img src={imgUrl} alt={product.name} className="w-full h-full object-cover"/>}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
+        {/* 🔥 ИСПОЛЬЗУЕМ СЛАЙДЕР ВМЕСТО ОБЫЧНОГО IMG */}
+        <ImageSlider imagesStr={product.image_url} />
+        
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none" />
       </div>
 
       <div className="px-6 -mt-8 relative z-10">
