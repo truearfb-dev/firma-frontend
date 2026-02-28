@@ -85,6 +85,36 @@ const Admin = ({ user, initData }) => {
         if (res.ok) setPendingReviews(await res.json());
     } catch (e) { console.error(e); }
   }
+// 🔥 ФУНКЦИЯ УДАЛЕНИЯ ТОВАРА
+const handleDeleteProduct = async (productId, e) => {
+    e.stopPropagation(); // Чтобы при клике на корзину не открывалось редактирование
+    
+    // Спрашиваем подтверждение, чтобы случайно не удалить
+    if (!window.confirm("Удалить этот товар навсегда?")) return;
+
+    const formData = new FormData();
+    formData.append('initData', initData);
+    formData.append('product_id', productId);
+
+    try {
+        const res = await fetch(`${API_URL}/admin/products/delete`, { 
+            method: 'POST', 
+            body: formData 
+        });
+        
+        if (res.ok) {
+            // Удаляем товар из локального списка, чтобы он исчез с экрана мгновенно
+            setProducts(products.filter(p => p.id !== productId));
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+        } else {
+            alert("Ошибка при удалении товара на сервере");
+        }
+    } catch (err) { 
+        alert("Ошибка сети"); 
+    }
+  }
 
   // --- ACTIONS ---
 
