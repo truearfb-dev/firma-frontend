@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw, Search } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw, Search, Trash2 } from 'lucide-react';
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; 
 
 const Admin = ({ user, initData }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -19,7 +19,7 @@ const Admin = ({ user, initData }) => {
   const [productCategory, setProductCategory] = useState('Clothing');
   const [productSizes, setProductSizes] = useState('S,M,L');
   const [selectedBrandId, setSelectedBrandId] = useState('');
-  const [productFiles, setProductFiles] = useState([]); // 🔥 МАССИВ ФАЙЛОВ
+  const [productFiles, setProductFiles] = useState([]); 
   
   // ПОИСК ПО ТОВАРАМ
   const [productSearch, setProductSearch] = useState('');
@@ -85,11 +85,11 @@ const Admin = ({ user, initData }) => {
         if (res.ok) setPendingReviews(await res.json());
     } catch (e) { console.error(e); }
   }
-// 🔥 ФУНКЦИЯ УДАЛЕНИЯ ТОВАРА
-const handleDeleteProduct = async (productId, e) => {
-    e.stopPropagation(); // Чтобы при клике на корзину не открывалось редактирование
+
+  // 🔥 ФУНКЦИЯ УДАЛЕНИЯ ТОВАРА
+  const handleDeleteProduct = async (productId, e) => {
+    e.stopPropagation(); 
     
-    // Спрашиваем подтверждение, чтобы случайно не удалить
     if (!window.confirm("Удалить этот товар навсегда?")) return;
 
     const formData = new FormData();
@@ -103,7 +103,6 @@ const handleDeleteProduct = async (productId, e) => {
         });
         
         if (res.ok) {
-            // Удаляем товар из локального списка, чтобы он исчез с экрана мгновенно
             setProducts(products.filter(p => p.id !== productId));
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -132,7 +131,6 @@ const handleDeleteProduct = async (productId, e) => {
     formData.append('sizes', productSizes);
     if (selectedBrandId) formData.append('brand_id', selectedBrandId);
     
-    // 🔥 ОТПРАВЛЯЕМ МАССИВ ФАЙЛОВ
     if (productFiles.length > 0) {
         for (let i = 0; i < productFiles.length; i++) {
             formData.append('files', productFiles[i]);
@@ -249,7 +247,7 @@ const handleDeleteProduct = async (productId, e) => {
 
   const getImgUrl = (url) => {
     if (!url) return null;
-    if (url.includes(',')) url = url.split(',')[0]; // Берем первую картинку для превью
+    if (url.includes(',')) url = url.split(',')[0]; 
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
   }
 
@@ -335,7 +333,6 @@ const handleDeleteProduct = async (productId, e) => {
                             </div>
                         )
                     )}
-                    {/* 🔥 ВАЖНО: multiple */}
                     <input type="file" multiple ref={fileInputRef} onChange={e => setProductFiles(e.target.files)} className="hidden" accept="image/*" />
                 </div>
 
@@ -381,12 +378,21 @@ const handleDeleteProduct = async (productId, e) => {
                                 <div className="text-[10px] font-bold uppercase truncate">{p.name}</div>
                                 <div className="text-xs font-mono text-gray-400">{p.price} ₽</div>
                                 
-                                <button 
-                                    onClick={() => startEditProduct(p)}
-                                    className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-yellow-500 hover:text-black transition-all"
-                                >
-                                    <Edit2 size={12} />
-                                </button>
+                                {/* 🔥 ВОТ ЗДЕСЬ ДОБАВЛЕНЫ ОБЕ КНОПКИ */}
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); startEditProduct(p); }}
+                                        className="p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-yellow-500 hover:text-black transition-all"
+                                    >
+                                        <Edit2 size={12} />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => handleDeleteProduct(p.id, e)}
+                                        className="p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-red-500 hover:text-white transition-all"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
                             </div>
                         ))
                     ) : (
@@ -399,7 +405,7 @@ const handleDeleteProduct = async (productId, e) => {
         </div>
       )}
 
-      {/* ОСТАЛЬНЫЕ СЕКЦИИ (БЕЗ ИЗМЕНЕНИЙ) */}
+      {/* ОСТАЛЬНЫЕ СЕКЦИИ */}
       {activeSection === 'brands' && (
         <div className="space-y-6 animate-slide-up">
             <form onSubmit={handleBrandSubmit} className={`space-y-4 p-4 rounded-xl border ${editingBrand ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-transparent border-transparent'}`}>
