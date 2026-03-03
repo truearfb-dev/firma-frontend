@@ -16,7 +16,8 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in pb-24">
+    {/* 🔥 ИСПРАВЛЕНИЕ: Увеличили pb-24 до pb-40, чтобы текст не обрезался внизу */}
+    <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in pb-40">
       <button 
         onClick={onBack}
         className="fixed top-4 left-4 z-50 bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 active:scale-95 transition-all"
@@ -25,7 +26,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
       </button>
 
       <div className="w-full h-[50vh] relative bg-[#111]">
-        {/* 🔥 СЛАЙДЕР ВМЕСТО КАРТИНКИ */}
+        {/* СЛАЙДЕР ВМЕСТО КАРТИНКИ */}
         <ImageSlider imagesStr={product.image_url} />
         
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none" />
