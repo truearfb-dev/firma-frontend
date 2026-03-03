@@ -231,8 +231,8 @@ function App() {
               </div>
             ) : (
               <>
-                  <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">ВЕСНА 2026</p>
-                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">НОВАЯ<br/><span className="text-gray-600">КОЛЛЕКЦИЯ</span></h1>
+                  <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">OFFICIAL</p>
+                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">FIRMA<br/><span className="text-gray-600">ARCHIVE</span></h1>
               </>
             )}
           </section>
