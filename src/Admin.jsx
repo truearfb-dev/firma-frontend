@@ -18,17 +18,16 @@ const Admin = ({ user, initData }) => {
   const [productPrice, setProductPrice] = useState('');
   const [productCategory, setProductCategory] = useState('Clothing');
   const [productSizes, setProductSizes] = useState('S,M,L');
+  const [productDescription, setProductDescription] = useState(''); // 🔥 ДОБАВЛЕНО
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [productFiles, setProductFiles] = useState([]); 
   
-  // ПОИСК ПО ТОВАРАМ
   const [productSearch, setProductSearch] = useState('');
-
-  // РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
   const [editingProduct, setEditingProduct] = useState(null);
 
   // BRAND FORM
   const [brandName, setBrandName] = useState('');
+  const [brandDescription, setBrandDescription] = useState(''); // 🔥 ДОБАВЛЕНО
   const [brandFile, setBrandFile] = useState(null);
   const [editingBrand, setEditingBrand] = useState(null);
 
@@ -86,63 +85,35 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   }
 
-  // 🔥 ФУНКЦИЯ УДАЛЕНИЯ ТОВАРА
   const handleDeleteProduct = async (productId, e) => {
     e.stopPropagation(); 
-    
     if (!window.confirm("Удалить этот товар навсегда?")) return;
-
     const formData = new FormData();
     formData.append('initData', initData);
     formData.append('product_id', productId);
-
     try {
-        const res = await fetch(`${API_URL}/admin/products/delete`, { 
-            method: 'POST', 
-            body: formData 
-        });
-        
+        const res = await fetch(`${API_URL}/admin/products/delete`, { method: 'POST', body: formData });
         if (res.ok) {
             setProducts(products.filter(p => p.id !== productId));
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-            }
-        } else {
-            alert("Ошибка при удалении товара на сервере");
-        }
-    } catch (err) { 
-        alert("Ошибка сети"); 
-    }
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        } else { alert("Ошибка при удалении"); }
+    } catch (err) { alert("Ошибка сети"); }
   }
 
-  // 🔥 ФУНКЦИЯ УДАЛЕНИЯ БРЕНДА
   const handleDeleteBrand = async (brandId, e) => {
     e.stopPropagation();
-    
     if (!window.confirm("Удалить этот бренд? (Товары этого бренда не удалятся, а станут 'Без бренда')")) return;
-
     const formData = new FormData();
     formData.append('initData', initData);
     formData.append('brand_id', brandId);
-
     try {
-        const res = await fetch(`${API_URL}/admin/brands/delete`, { 
-            method: 'POST', 
-            body: formData 
-        });
-        
+        const res = await fetch(`${API_URL}/admin/brands/delete`, { method: 'POST', body: formData });
         if (res.ok) {
             setBrands(brands.filter(b => b.id !== brandId));
-            fetchProducts(); // Обновляем товары, чтобы снять с них удаленный бренд
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-            }
-        } else {
-            alert("Ошибка при удалении бренда на сервере");
-        }
-    } catch (err) { 
-        alert("Ошибка сети"); 
-    }
+            fetchProducts();
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        } else { alert("Ошибка при удалении"); }
+    } catch (err) { alert("Ошибка сети"); }
   }
 
   // --- ACTIONS ---
@@ -159,6 +130,7 @@ const Admin = ({ user, initData }) => {
     formData.append('price', productPrice);
     formData.append('category', productCategory);
     formData.append('sizes', productSizes);
+    formData.append('description', productDescription); // 🔥 Отправляем описание
     if (selectedBrandId) formData.append('brand_id', selectedBrandId);
     
     if (productFiles.length > 0) {
@@ -177,7 +149,7 @@ const Admin = ({ user, initData }) => {
         const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
             alert(editingProduct ? "Товар обновлен!" : "Товар создан!");
-            setProductName(''); setProductPrice(''); setProductFiles([]); setEditingProduct(null); setProductSizes('S,M,L');
+            cancelEditProduct();
             fetchProducts();
         } else {
             const err = await res.json();
@@ -193,6 +165,7 @@ const Admin = ({ user, initData }) => {
       setProductPrice(prod.price);
       setProductCategory(prod.category || 'Clothing');
       setProductSizes(prod.sizes || 'S,M,L');
+      setProductDescription(prod.description || ''); // 🔥 Загружаем описание
       setSelectedBrandId(prod.brand_id || '');
       setProductFiles([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -200,7 +173,7 @@ const Admin = ({ user, initData }) => {
 
   const cancelEditProduct = () => {
       setEditingProduct(null);
-      setProductName(''); setProductPrice(''); setProductFiles([]); setProductSizes('S,M,L');
+      setProductName(''); setProductPrice(''); setProductFiles([]); setProductSizes('S,M,L'); setProductDescription('');
   }
 
   const handleBrandSubmit = async (e) => {
@@ -212,6 +185,7 @@ const Admin = ({ user, initData }) => {
     const formData = new FormData();
     formData.append('initData', initData); 
     formData.append('name', brandName);
+    formData.append('description', brandDescription); // 🔥 Отправляем описание
     if (brandFile) formData.append('file', brandFile); 
 
     let url = `${API_URL}/admin/brands`;
@@ -224,7 +198,7 @@ const Admin = ({ user, initData }) => {
         const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
             alert(editingBrand ? "Бренд обновлен!" : "Бренд создан!");
-            setBrandName(''); setBrandFile(null); setEditingBrand(null);
+            cancelEditBrand();
             fetchBrands();
         } else {
             const err = await res.json();
@@ -237,6 +211,7 @@ const Admin = ({ user, initData }) => {
   const startEditBrand = (brand) => {
     setEditingBrand(brand);
     setBrandName(brand.name);
+    setBrandDescription(brand.description || ''); // 🔥 Загружаем описание
     setBrandFile(null); 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -244,6 +219,7 @@ const Admin = ({ user, initData }) => {
   const cancelEditBrand = () => {
     setEditingBrand(null);
     setBrandName('');
+    setBrandDescription('');
     setBrandFile(null);
   };
 
@@ -359,7 +335,7 @@ const Admin = ({ user, initData }) => {
                         ) : (
                             <div className="flex flex-col items-center gap-2">
                                 <Upload className="text-gray-500" />
-                                <span className="text-[10px] text-gray-500">Можно выбрать несколько</span>
+                                <span className="text-[10px] text-gray-500">Выбрать фото товара</span>
                             </div>
                         )
                     )}
@@ -376,6 +352,14 @@ const Admin = ({ user, initData }) => {
                     </select>
                 </div>
                  <input type="text" placeholder="Размеры (S,M,L)" value={productSizes} onChange={e => setProductSizes(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+
+                {/* 🔥 ПОЛЕ ОПИСАНИЯ ТОВАРА */}
+                <textarea 
+                    placeholder="Описание товара (материал, посадка, детали...)" 
+                    value={productDescription} 
+                    onChange={e => setProductDescription(e.target.value)} 
+                    className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none min-h-[100px] resize-none"
+                />
 
                 <button disabled={isSubmitting} className={`w-full font-bold py-4 rounded-xl uppercase ${editingProduct ? 'bg-yellow-500 text-black' : 'bg-white text-black'}`}>
                     {isSubmitting ? <Loader className="animate-spin mx-auto"/> : (editingProduct ? "Сохранить изменения" : "Создать товар")}
@@ -462,6 +446,14 @@ const Admin = ({ user, initData }) => {
 
                 <input type="text" placeholder="Название бренда" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
                 
+                {/* 🔥 ПОЛЕ ОПИСАНИЯ БРЕНДА */}
+                <textarea 
+                    placeholder="Описание бренда (история, стиль...)" 
+                    value={brandDescription} 
+                    onChange={e => setBrandDescription(e.target.value)} 
+                    className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none min-h-[80px] resize-none"
+                />
+
                 <button disabled={isSubmitting} className={`w-full font-bold py-4 rounded-xl uppercase ${editingBrand ? 'bg-yellow-500 text-black' : 'bg-white text-black'}`}>
                     {isSubmitting ? <Loader className="animate-spin mx-auto"/> : (editingBrand ? "Сохранить изменения" : "Создать бренд")}
                 </button>
