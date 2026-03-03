@@ -181,8 +181,9 @@ const Community = ({ user }) => {
               className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
               onClick={() => setFullscreenImage(null)}
           >
+              {/* 🔥 ОБНОВЛЕННЫЙ КРЕСТИК: контрастный, чуть ниже от края экрана */}
               <button 
-                  className="absolute top-6 right-6 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all active:scale-90"
+                  className="absolute top-4 right-4 z-[101] p-2.5 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-white shadow-xl hover:bg-black/70 active:scale-90 transition-all"
                   onClick={() => setFullscreenImage(null)}
               >
                   <X size={24} />
