@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, Loader, Heart } from 'lucide-react';
+import { Camera, Loader, X } from 'lucide-react'; // 🔥 Добавили иконку X (крестик)
 
-const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; // ТВОЙ URL
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; 
 
 const Community = ({ user }) => {
   const [reviews, setReviews] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null); // 🔥 Состояние для фуллскрина
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -25,11 +26,6 @@ const Community = ({ user }) => {
 
     setIsUploading(true);
     const formData = new FormData();
-    // user.initData или user.telegram_id нужно передать для валидации, 
-    // но в App.jsx мы передавали просто user. 
-    // Лучше передать initData пропсом, но если его нет, бэк проверит по user_id (если допилить).
-    // В текущей версии API ждет initData.
-    // ПРЕДПОЛАГАЕМ, ЧТО initData СОХРАНЕНА В window.Telegram.WebApp.initData
     
     const tgInitData = window.Telegram?.WebApp?.initData || '';
     formData.append('initData', tgInitData);
@@ -88,14 +84,15 @@ const Community = ({ user }) => {
         {reviews.map((review) => (
           <div key={review.id} className="break-inside-avoid bg-[#111] rounded-xl overflow-hidden border border-white/5 group relative">
             
+            {/* 🔥 КЛИК ПО ФОТО ДЛЯ ОТКРЫТИЯ */}
             <img 
                 src={getImgUrl(review.image_path)} 
-                className="w-full h-auto object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                onClick={() => setFullscreenImage(review.image_path)}
+                className="w-full h-auto object-cover grayscale group-hover:grayscale-0 transition-all duration-500 cursor-pointer"
             />
             
-            <div className="p-3 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 left-0 right-0">
-                <div className="flex items-center justify-between">
-                    {/* 🔥 ВОТ ЗДЕСЬ ВЫВОД НИКА */}
+            <div className="p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent absolute bottom-0 left-0 right-0 pointer-events-none">
+                <div className="flex items-center justify-between pointer-events-auto">
                     <div className="text-[10px] font-bold text-white truncate pr-2">
                         {review.author_username ? (
                             <a 
@@ -103,7 +100,7 @@ const Community = ({ user }) => {
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1"
-                                onClick={(e) => e.stopPropagation()} // Чтобы клик не открывал фото (если будет модалка)
+                                onClick={(e) => e.stopPropagation()} 
                             >
                                 @{review.author_username}
                             </a>
@@ -111,7 +108,7 @@ const Community = ({ user }) => {
                             <span className="text-gray-300">{review.author_name}</span>
                         )}
                     </div>
-                    <span className="text-[9px] font-mono text-gray-500">{review.created_at}</span>
+                    <span className="text-[9px] font-mono text-gray-400">{review.created_at}</span>
                 </div>
             </div>
 
@@ -122,6 +119,26 @@ const Community = ({ user }) => {
       {reviews.length === 0 && (
           <div className="text-center py-20 text-gray-600 font-mono text-xs uppercase">
               Лента пока пуста.<br/>Стань первым!
+          </div>
+      )}
+
+      {/* 🔥 МОДАЛЬНОЕ ОКНО ДЛЯ ФУЛЛСКРИНА */}
+      {fullscreenImage && (
+          <div 
+              className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
+              onClick={() => setFullscreenImage(null)}
+          >
+              <button 
+                  className="absolute top-6 right-6 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all active:scale-90"
+                  onClick={() => setFullscreenImage(null)}
+              >
+                  <X size={24} />
+              </button>
+              <img 
+                  src={getImgUrl(fullscreenImage)} 
+                  className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl animate-slide-up"
+                  onClick={(e) => e.stopPropagation()} // Чтобы клик по самому фото не закрывал его
+              />
           </div>
       )}
 
