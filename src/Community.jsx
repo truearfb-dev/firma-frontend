@@ -181,16 +181,18 @@ const Community = ({ user }) => {
               className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
               onClick={() => setFullscreenImage(null)}
           >
-              {/* 🔥 ОБНОВЛЕННЫЙ КРЕСТИК: контрастный, чуть ниже от края экрана */}
+              {/* 🔥 ИСПРАВЛЕНИЕ: Сдвинули крестик сильно ниже (top-24), чтобы он не прятался под системной шапкой Telegram */}
               <button 
-                  className="absolute top-4 right-4 z-[101] p-2.5 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-white shadow-xl hover:bg-black/70 active:scale-90 transition-all"
+                  className="absolute top-24 right-6 z-[101] p-3 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-white shadow-xl hover:bg-black/70 active:scale-90 transition-all"
                   onClick={() => setFullscreenImage(null)}
               >
                   <X size={24} />
               </button>
+              
+              {/* Уменьшил max-h до 75vh, чтобы фото не перекрывалось с нашим новым расположением кнопки */}
               <img 
                   src={getImgUrl(fullscreenImage)} 
-                  className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl animate-slide-up"
+                  className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl animate-slide-up mt-8"
                   onClick={(e) => e.stopPropagation()} 
               />
           </div>
