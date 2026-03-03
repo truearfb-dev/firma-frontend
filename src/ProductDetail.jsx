@@ -16,7 +16,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
   };
 
   return (
-    {/* 🔥 ИСПРАВЛЕНИЕ: Увеличили pb-24 до pb-40, чтобы текст не обрезался внизу */}
     <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in pb-40">
       <button 
         onClick={onBack}
