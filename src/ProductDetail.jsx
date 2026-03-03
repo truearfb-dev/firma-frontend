@@ -16,7 +16,8 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in pb-40">
+    {/* Убрали pb-40 отсюда, так как iOS его игнорирует */}
+    <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in">
       <button 
         onClick={onBack}
         className="fixed top-4 left-4 z-50 bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 active:scale-95 transition-all"
@@ -73,12 +74,17 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
           </div>
         )}
 
-        <div className="space-y-4 mb-12">
+        <div className="space-y-4 mb-4">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Описание</h3>
-          <p className="text-sm text-gray-300 leading-relaxed font-light">
+          {/* 🔥 Добавили whitespace-pre-wrap для сохранения абзацев из админки */}
+          <p className="text-sm text-gray-300 leading-relaxed font-light whitespace-pre-wrap">
             {product.description || "Описание отсутствует."}
           </p>
         </div>
+
+        {/* 🔥 ВОТ ОНО: Невидимый физический блок-распорка, который гарантированно вытолкнет текст вверх! */}
+        <div className="h-40 w-full shrink-0"></div>
+
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black to-transparent z-50">
