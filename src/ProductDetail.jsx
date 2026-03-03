@@ -18,10 +18,10 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
   return (
     <div className="fixed inset-0 z-[60] bg-black text-white flex flex-col animate-fade-in">
       
-      {/* Кнопка НАЗАД */}
+      {/* 🔥 ИСПРАВЛЕНИЕ: Опустили кнопку НАЗАД (top-24 вместо top-4), чтобы она не перекрывалась системной шапкой */}
       <button 
         onClick={onBack}
-        className="absolute top-4 left-4 z-[100] bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 active:scale-95 transition-all"
+        className="absolute top-24 left-4 z-[100] bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 active:scale-95 transition-all"
       >
         <ArrowLeft size={24} />
       </button>
