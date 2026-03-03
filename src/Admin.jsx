@@ -115,6 +115,36 @@ const Admin = ({ user, initData }) => {
     }
   }
 
+  // 🔥 ФУНКЦИЯ УДАЛЕНИЯ БРЕНДА
+  const handleDeleteBrand = async (brandId, e) => {
+    e.stopPropagation();
+    
+    if (!window.confirm("Удалить этот бренд? (Товары этого бренда не удалятся, а станут 'Без бренда')")) return;
+
+    const formData = new FormData();
+    formData.append('initData', initData);
+    formData.append('brand_id', brandId);
+
+    try {
+        const res = await fetch(`${API_URL}/admin/brands/delete`, { 
+            method: 'POST', 
+            body: formData 
+        });
+        
+        if (res.ok) {
+            setBrands(brands.filter(b => b.id !== brandId));
+            fetchProducts(); // Обновляем товары, чтобы снять с них удаленный бренд
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+        } else {
+            alert("Ошибка при удалении бренда на сервере");
+        }
+    } catch (err) { 
+        alert("Ошибка сети"); 
+    }
+  }
+
   // --- ACTIONS ---
 
   const handleProductSubmit = async (e) => {
@@ -378,7 +408,6 @@ const Admin = ({ user, initData }) => {
                                 <div className="text-[10px] font-bold uppercase truncate">{p.name}</div>
                                 <div className="text-xs font-mono text-gray-400">{p.price} ₽</div>
                                 
-                                {/* 🔥 ВОТ ЗДЕСЬ ДОБАВЛЕНЫ ОБЕ КНОПКИ */}
                                 <div className="absolute top-2 right-2 flex gap-1">
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); startEditProduct(p); }}
@@ -405,7 +434,6 @@ const Admin = ({ user, initData }) => {
         </div>
       )}
 
-      {/* ОСТАЛЬНЫЕ СЕКЦИИ */}
       {activeSection === 'brands' && (
         <div className="space-y-6 animate-slide-up">
             <form onSubmit={handleBrandSubmit} className={`space-y-4 p-4 rounded-xl border ${editingBrand ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-transparent border-transparent'}`}>
@@ -443,16 +471,24 @@ const Admin = ({ user, initData }) => {
                 <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Существующие бренды</h3>
                 <div className="flex gap-3 flex-wrap">
                     {brands.map(b => (
-                        <div key={b.id} className="group relative flex items-center gap-2 bg-[#111] px-3 py-2 rounded-lg border border-white/5 pr-8">
+                        <div key={b.id} className="group relative flex items-center gap-2 bg-[#111] px-3 py-2 rounded-lg border border-white/5 pr-14">
                             <div className="w-6 h-6 rounded-full bg-white/10 overflow-hidden"><img src={`https://firmashop-truear.waw0.amvera.tech${b.logo_url}`} className="w-full h-full object-cover"/></div>
                             <span className="text-xs font-bold uppercase">{b.name}</span>
                             
-                            <button 
-                                onClick={() => startEditBrand(b)}
-                                className="absolute right-1 p-1.5 text-gray-600 hover:text-white transition-colors"
-                            >
-                                <Edit2 size={12} />
-                            </button>
+                            <div className="absolute right-1 flex gap-0.5">
+                                <button 
+                                    onClick={() => startEditBrand(b)}
+                                    className="p-1.5 text-gray-600 hover:text-white transition-colors"
+                                >
+                                    <Edit2 size={12} />
+                                </button>
+                                <button 
+                                    onClick={(e) => handleDeleteBrand(b.id, e)}
+                                    className="p-1.5 text-gray-600 hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
