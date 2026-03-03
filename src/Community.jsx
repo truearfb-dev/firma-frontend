@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Loader, X } from 'lucide-react'; // 🔥 Добавили иконку X (крестик)
+import { Camera, Loader, X, Heart } from 'lucide-react'; 
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; 
 
 const Community = ({ user }) => {
   const [reviews, setReviews] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [fullscreenImage, setFullscreenImage] = useState(null); // 🔥 Состояние для фуллскрина
+  const [fullscreenImage, setFullscreenImage] = useState(null); 
   const fileInputRef = useRef(null);
+
+  // Безопасное получение ID пользователя Телеграм
+  const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || user?.id;
 
   useEffect(() => {
     fetchReviews();
@@ -48,6 +51,38 @@ const Community = ({ user }) => {
     setIsUploading(false);
   };
 
+  // 🔥 ОБРАБОТЧИК ЛАЙКОВ
+  const handleLike = async (reviewId, e) => {
+    e.stopPropagation(); // Чтобы при клике на лайк фото не открывалось на весь экран
+
+    // 1. Мгновенно меняем UI (Оптимистичное обновление)
+    setReviews(prev => prev.map(r => {
+        if (r.id === reviewId) {
+            const hasLiked = r.liked_by.includes(tgUserId);
+            const newLikedBy = hasLiked 
+                ? r.liked_by.filter(id => id !== tgUserId) // Убираем лайк
+                : [...r.liked_by, tgUserId]; // Добавляем лайк
+            return { ...r, liked_by: newLikedBy, likes_count: newLikedBy.length };
+        }
+        return r;
+    }));
+
+    // Легкая вибрация при лайке
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+
+    // 2. Отправляем запрос на сервер в фоне
+    const tgInitData = window.Telegram?.WebApp?.initData || '';
+    try {
+        await fetch(`${API_URL}/reviews/like`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tgInitData, review_id: reviewId })
+        });
+    } catch (err) { console.error(err); }
+  };
+
   const getImgUrl = (url) => {
     if (!url) return null;
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
@@ -84,7 +119,6 @@ const Community = ({ user }) => {
         {reviews.map((review) => (
           <div key={review.id} className="break-inside-avoid bg-[#111] rounded-xl overflow-hidden border border-white/5 group relative">
             
-            {/* 🔥 КЛИК ПО ФОТО ДЛЯ ОТКРЫТИЯ */}
             <img 
                 src={getImgUrl(review.image_path)} 
                 onClick={() => setFullscreenImage(review.image_path)}
@@ -92,23 +126,42 @@ const Community = ({ user }) => {
             />
             
             <div className="p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent absolute bottom-0 left-0 right-0 pointer-events-none">
-                <div className="flex items-center justify-between pointer-events-auto">
-                    <div className="text-[10px] font-bold text-white truncate pr-2">
-                        {review.author_username ? (
-                            <a 
-                                href={`https://t.me/${review.author_username}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1"
-                                onClick={(e) => e.stopPropagation()} 
-                            >
-                                @{review.author_username}
-                            </a>
-                        ) : (
-                            <span className="text-gray-300">{review.author_name}</span>
-                        )}
+                <div className="flex items-end justify-between pointer-events-auto">
+                    
+                    {/* Инфо автора */}
+                    <div className="flex flex-col gap-0.5">
+                        <div className="text-[10px] font-bold text-white truncate pr-2">
+                            {review.author_username ? (
+                                <a 
+                                    href={`https://t.me/${review.author_username}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1"
+                                    onClick={(e) => e.stopPropagation()} 
+                                >
+                                    @{review.author_username}
+                                </a>
+                            ) : (
+                                <span className="text-gray-300">{review.author_name}</span>
+                            )}
+                        </div>
+                        <span className="text-[9px] font-mono text-gray-400">{review.created_at}</span>
                     </div>
-                    <span className="text-[9px] font-mono text-gray-400">{review.created_at}</span>
+
+                    {/* 🔥 КНОПКА ЛАЙКА */}
+                    <button 
+                        onClick={(e) => handleLike(review.id, e)}
+                        className="flex items-center gap-1.5 active:scale-90 transition-transform bg-white/10 backdrop-blur-md px-2.5 py-1.5 rounded-full"
+                    >
+                        <Heart 
+                            size={14} 
+                            className={review.liked_by?.includes(tgUserId) ? "fill-red-500 text-red-500" : "text-white"} 
+                        />
+                        <span className="text-[10px] font-mono font-bold text-white">
+                            {review.likes_count > 0 ? review.likes_count : ''}
+                        </span>
+                    </button>
+
                 </div>
             </div>
 
@@ -122,7 +175,7 @@ const Community = ({ user }) => {
           </div>
       )}
 
-      {/* 🔥 МОДАЛЬНОЕ ОКНО ДЛЯ ФУЛЛСКРИНА */}
+      {/* МОДАЛЬНОЕ ОКНО ДЛЯ ФУЛЛСКРИНА */}
       {fullscreenImage && (
           <div 
               className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
@@ -137,7 +190,7 @@ const Community = ({ user }) => {
               <img 
                   src={getImgUrl(fullscreenImage)} 
                   className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl animate-slide-up"
-                  onClick={(e) => e.stopPropagation()} // Чтобы клик по самому фото не закрывал его
+                  onClick={(e) => e.stopPropagation()} 
               />
           </div>
       )}
