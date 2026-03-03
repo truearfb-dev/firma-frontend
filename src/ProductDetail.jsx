@@ -16,7 +16,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
   };
 
   return (
-    {/* Убрали pb-40 отсюда, так как iOS его игнорирует */}
     <div className="fixed inset-0 z-[60] bg-black text-white overflow-y-auto animate-fade-in">
       <button 
         onClick={onBack}
@@ -82,7 +81,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
           </p>
         </div>
 
-        {/* 🔥 ВОТ ОНО: Невидимый физический блок-распорка, который гарантированно вытолкнет текст вверх! */}
+        {/* 🔥 Физический блок-распорка, который гарантированно вытолкнет текст вверх! */}
         <div className="h-40 w-full shrink-0"></div>
 
       </div>
