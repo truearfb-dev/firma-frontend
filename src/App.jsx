@@ -48,6 +48,10 @@ function App() {
       tg.ready();
       tg.expand();
       
+      // 🔥 ЗАЩИТА ОТ СЛУЧАЙНОГО ЗАКРЫТИЯ ПРИ СВАЙПЕ ВНИЗ
+      tg.enableClosingConfirmation(); 
+      if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); // Для самых новых версий Telegram
+      
       const rawInitData = tg.initData; 
       setInitData(rawInitData);
 
