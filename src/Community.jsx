@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Loader, X, Heart } from 'lucide-react'; 
+import { Camera, Loader, X, Heart, Trash2 } from 'lucide-react'; 
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; 
 
@@ -9,7 +9,6 @@ const Community = ({ user }) => {
   const [fullscreenImage, setFullscreenImage] = useState(null); 
   const fileInputRef = useRef(null);
 
-  // Безопасное получение ID пользователя Телеграм
   const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || user?.id;
 
   useEffect(() => {
@@ -51,28 +50,24 @@ const Community = ({ user }) => {
     setIsUploading(false);
   };
 
-  // 🔥 ОБРАБОТЧИК ЛАЙКОВ
   const handleLike = async (reviewId, e) => {
-    e.stopPropagation(); // Чтобы при клике на лайк фото не открывалось на весь экран
+    e.stopPropagation(); 
 
-    // 1. Мгновенно меняем UI (Оптимистичное обновление)
     setReviews(prev => prev.map(r => {
         if (r.id === reviewId) {
             const hasLiked = r.liked_by.includes(tgUserId);
             const newLikedBy = hasLiked 
-                ? r.liked_by.filter(id => id !== tgUserId) // Убираем лайк
-                : [...r.liked_by, tgUserId]; // Добавляем лайк
+                ? r.liked_by.filter(id => id !== tgUserId) 
+                : [...r.liked_by, tgUserId]; 
             return { ...r, liked_by: newLikedBy, likes_count: newLikedBy.length };
         }
         return r;
     }));
 
-    // Легкая вибрация при лайке
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
 
-    // 2. Отправляем запрос на сервер в фоне
     const tgInitData = window.Telegram?.WebApp?.initData || '';
     try {
         await fetch(`${API_URL}/reviews/like`, {
@@ -83,6 +78,29 @@ const Community = ({ user }) => {
     } catch (err) { console.error(err); }
   };
 
+  // 🔥 НОВОЕ: Обработчик удаления своего фото
+  const handleDeleteOwnReview = async (reviewId, e) => {
+      e.stopPropagation();
+      if (!window.confirm("Удалить вашу фотографию из ленты?")) return;
+
+      const tgInitData = window.Telegram?.WebApp?.initData || '';
+      try {
+          const res = await fetch(`${API_URL}/reviews/delete`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ initData: tgInitData, review_id: reviewId })
+          });
+          if (res.ok) {
+              setReviews(prev => prev.filter(r => r.id !== reviewId));
+              if (window.Telegram?.WebApp?.HapticFeedback) {
+                  window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+              }
+          } else {
+              alert("Не удалось удалить фотографию.");
+          }
+      } catch (err) { console.error(err); }
+  }
+
   const getImgUrl = (url) => {
     if (!url) return null;
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
@@ -91,7 +109,6 @@ const Community = ({ user }) => {
   return (
     <div className="pt-20 pb-24 px-4 animate-fade-in min-h-screen">
       
-      {/* ЗАГОЛОВОК И КНОПКА ЗАГРУЗКИ */}
       <div className="flex justify-between items-end mb-8">
         <div>
             <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">Community</h1>
@@ -114,11 +131,20 @@ const Community = ({ user }) => {
         />
       </div>
 
-      {/* СЕТКА ФОТОГРАФИЙ */}
       <div className="columns-2 gap-4 space-y-4">
         {reviews.map((review) => (
           <div key={review.id} className="break-inside-avoid bg-[#111] rounded-xl overflow-hidden border border-white/5 group relative">
             
+            {/* 🔥 НОВОЕ: Кнопка удаления (появляется только на своих фото) */}
+            {review.author_tg_id === tgUserId && (
+                <button 
+                    onClick={(e) => handleDeleteOwnReview(review.id, e)}
+                    className="absolute top-2 right-2 z-10 p-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full text-white/50 hover:text-red-500 active:scale-90 transition-all"
+                >
+                    <Trash2 size={14} />
+                </button>
+            )}
+
             <img 
                 src={getImgUrl(review.image_path)} 
                 onClick={() => setFullscreenImage(review.image_path)}
@@ -128,7 +154,6 @@ const Community = ({ user }) => {
             <div className="p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent absolute bottom-0 left-0 right-0 pointer-events-none">
                 <div className="flex items-end justify-between pointer-events-auto">
                     
-                    {/* Инфо автора */}
                     <div className="flex flex-col gap-0.5">
                         <div className="text-[10px] font-bold text-white truncate pr-2">
                             {review.author_username ? (
@@ -148,7 +173,6 @@ const Community = ({ user }) => {
                         <span className="text-[9px] font-mono text-gray-400">{review.created_at}</span>
                     </div>
 
-                    {/* 🔥 КНОПКА ЛАЙКА */}
                     <button 
                         onClick={(e) => handleLike(review.id, e)}
                         className="flex items-center gap-1.5 active:scale-90 transition-transform bg-white/10 backdrop-blur-md px-2.5 py-1.5 rounded-full"
@@ -175,13 +199,11 @@ const Community = ({ user }) => {
           </div>
       )}
 
-      {/* МОДАЛЬНОЕ ОКНО ДЛЯ ФУЛЛСКРИНА */}
       {fullscreenImage && (
           <div 
               className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
               onClick={() => setFullscreenImage(null)}
           >
-              {/* 🔥 ИСПРАВЛЕНИЕ: Сдвинули крестик сильно ниже (top-24), чтобы он не прятался под системной шапкой Telegram */}
               <button 
                   className="absolute top-24 right-6 z-[101] p-3 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-white shadow-xl hover:bg-black/70 active:scale-90 transition-all"
                   onClick={() => setFullscreenImage(null)}
@@ -189,7 +211,6 @@ const Community = ({ user }) => {
                   <X size={24} />
               </button>
               
-              {/* Уменьшил max-h до 75vh, чтобы фото не перекрывалось с нашим новым расположением кнопки */}
               <img 
                   src={getImgUrl(fullscreenImage)} 
                   className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl animate-slide-up mt-8"
