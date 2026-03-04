@@ -79,10 +79,7 @@ function App() {
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData: initDataStr, 
-          start_param: startParam
-        }),
+        body: JSON.stringify({ initData: initDataStr, start_param: startParam }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -108,9 +105,8 @@ function App() {
     } else {
       setFavorites([...favorites, productId]);
     }
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    
     if (user && initData) {
       try {
         await fetch(`${API_URL}/favorites/toggle`, {
@@ -137,9 +133,7 @@ function App() {
         return b;
     }));
 
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
 
     if (initData) {
         try {
@@ -166,10 +160,7 @@ function App() {
   const handleCheckout = async () => {
     if (!user || !initData) { alert("Ошибка: Нет авторизации"); return; }
     
-    const orderItems = cart.map(item => ({
-        product_id: item.id,
-        size: item.selectedSize || null
-    }));
+    const orderItems = cart.map(item => ({ product_id: item.id, size: item.selectedSize || null }));
 
     try {
         const response = await fetch(`${API_URL}/orders`, {
@@ -184,6 +175,14 @@ function App() {
             alert("Ошибка при создании заказа");
         }
     } catch (error) { console.error(error); }
+  }
+
+  // 🔥 НОВОЕ: Функция для открытия товара из Community
+  const handleOpenProductFromCommunity = (productId) => {
+      const fullProduct = products.find(p => p.id === productId);
+      if (fullProduct) {
+          setSelectedProduct(fullProduct);
+      }
   }
 
   const categories = useMemo(() => {
@@ -263,14 +262,9 @@ function App() {
                   <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Официальная коллекция"}</p>
               </div>
             ) : (
-              // 🔥 ИСПРАВЛЕННАЯ АНИМАЦИЯ
               <div className="relative w-full py-12 flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/5 bg-[#0a0a0a] shadow-[0_0_40px_rgba(255,255,255,0.02)]">
-                  
-                  {/* Фоновые анимированные сферы */}
                   <div className="absolute top-[-20%] left-[-10%] w-48 h-48 bg-white/10 rounded-full blur-[40px] animate-float pointer-events-none"></div>
                   <div className="absolute bottom-[-20%] right-[-10%] w-56 h-56 bg-white/5 rounded-full blur-[50px] animate-float-delayed pointer-events-none"></div>
-                  
-                  {/* Сканирующая линия - теперь работает правильно через top */}
                   <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent animate-scanline shadow-[0_0_15px_rgba(255,255,255,0.3)] z-20 pointer-events-none"></div>
 
                   <p className="text-[10px] font-bold tracking-[0.3em] text-gray-500 mb-4 uppercase relative z-10">OFFICIAL</p>
@@ -290,26 +284,20 @@ function App() {
              <div className="flex gap-4 justify-start min-w-max px-2 pt-2 pb-1">
                 {brands.map(brand => {
                     const isLiked = brand.liked_by?.includes(safeUserId);
-                    
                     return (
                         <div key={brand.id} onClick={() => setSelectedBrand(brand)} className="flex flex-col items-center gap-2 cursor-pointer group relative mt-1">
-                            
                             <button 
                                 onClick={(e) => handleToggleBrandLike(e, brand.id)}
                                 className="absolute -top-2 -right-3 bg-[#1a1a1a] border border-white/10 rounded-full px-1.5 py-1 flex items-center gap-1 z-10 hover:scale-110 active:scale-90 transition-all shadow-xl"
                             >
                                 <Heart size={10} className={isLiked ? "fill-red-500 text-red-500" : "text-gray-400"} />
                                 {brand.likes_count > 0 && (
-                                    <span className="text-[9px] font-mono font-bold text-white leading-none pr-0.5">
-                                        {brand.likes_count}
-                                    </span>
+                                    <span className="text-[9px] font-mono font-bold text-white leading-none pr-0.5">{brand.likes_count}</span>
                                 )}
                             </button>
-
                             <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden group-active:scale-90 transition-all">
                                 {brand.logo_url ? <img src={getImageUrl(brand.logo_url)} className="w-full h-full object-cover" /> : <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>}
                             </div>
-                            
                             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{brand.name}</span>
                         </div>
                     )
@@ -356,18 +344,8 @@ function App() {
                   <div className="flex justify-between items-center mb-4 px-1">
                       <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{filteredProducts.length} товаров</span>
                       <div className="flex gap-1.5 bg-[#111] p-1 rounded-lg border border-white/5">
-                          <button 
-                              onClick={() => setGridView('single')} 
-                              className={`p-1.5 rounded transition-all ${gridView === 'single' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                          >
-                              <Square size={14} />
-                          </button>
-                          <button 
-                              onClick={() => setGridView('grid')} 
-                              className={`p-1.5 rounded transition-all ${gridView === 'grid' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                          >
-                              <LayoutGrid size={14} />
-                          </button>
+                          <button onClick={() => setGridView('single')} className={`p-1.5 rounded transition-all ${gridView === 'single' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}><Square size={14} /></button>
+                          <button onClick={() => setGridView('grid')} className={`p-1.5 rounded transition-all ${gridView === 'grid' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}><LayoutGrid size={14} /></button>
                       </div>
                   </div>
               )}
@@ -379,9 +357,7 @@ function App() {
                   return (
                   <div key={product.id} onClick={() => setSelectedProduct(product)} className={`group bg-[#0a0a0a] border border-white/5 rounded-xl cursor-pointer active:scale-95 transition-all relative flex flex-col ${gridView === 'grid' ? 'p-2' : 'p-4'}`}>
                       
-                      {product.old_price && (
-                          <div className="absolute top-4 left-4 z-20 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">Sale</div>
-                      )}
+                      {product.old_price && <div className="absolute top-4 left-4 z-20 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">Sale</div>}
 
                       <button onClick={(e) => handleToggleFavorite(e, product.id)} className={`absolute z-20 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all ${gridView === 'grid' ? 'top-3 right-3 w-8 h-8' : 'top-6 right-6 w-10 h-10'}`}>
                           <Heart size={gridView === 'grid' ? 14 : 18} className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
@@ -398,9 +374,7 @@ function App() {
                                   <p className="text-[9px] text-gray-500 truncate">{product.brand ? product.brand.name : 'Firma Archive'}</p>
                               </div>
                               <div className="text-right whitespace-nowrap">
-                                  {product.old_price && (
-                                      <div className="text-[9px] text-gray-500 line-through leading-none mb-1">{product.old_price} ₽</div>
-                                  )}
+                                  {product.old_price && <div className="text-[9px] text-gray-500 line-through leading-none mb-1">{product.old_price} ₽</div>}
                                   <div className={`${gridView === 'grid' ? 'text-xs' : 'text-lg'} font-mono font-bold leading-none ${product.old_price ? 'text-red-500' : 'text-white'}`}>{product.price} ₽</div>
                               </div>
                           </div>
@@ -425,7 +399,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-white selection:text-black">
-      {/* 🔥 ОБНОВЛЕННЫЙ БЛОК АНИМАЦИИ (исправлен scanline) */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes float {
           0%, 100% { transform: translateY(0) scale(1); opacity: 0.2; }
@@ -433,7 +406,6 @@ function App() {
         }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-float-delayed { animation: float 6s ease-in-out 3s infinite; }
-        
         @keyframes scanline {
           0% { top: 0; opacity: 0; }
           10% { opacity: 1; }
@@ -467,7 +439,12 @@ function App() {
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
         {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
-        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (<Community user={user} />)}
+        
+        {/* 🔥 НОВОЕ: Передаем функцию открытия товара в Community */}
+        {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (
+            <Community user={user} onProductClick={handleOpenProductFromCommunity} />
+        )}
+        
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (<Admin user={user} initData={initData} />)}
       </main>
