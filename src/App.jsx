@@ -223,8 +223,7 @@ function App() {
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
   const renderProfile = () => (
-    // Увеличили отступ pt-32 -> pt-36
-    <div className="pt-36 px-6 text-center animate-fade-in pb-20">
+    <div className="pt-32 px-6 text-center animate-fade-in pb-20">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
         {user?.photo_url ? <img src={user.photo_url} className="w-full h-full rounded-full" /> : <span>👤</span>}
       </div>
@@ -254,8 +253,7 @@ function App() {
   const renderShop = () => (
     <div className="animate-fade-in">
         {!searchQuery && (
-          // Увеличили отступ pt-28 -> pt-36
-          <section className="pt-36 pb-6 px-4 flex flex-col items-center justify-center text-center">
+          <section className="pt-32 pb-6 px-4 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
               <div className="animate-slide-up">
                   <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> СБРОСИТЬ ФИЛЬТР</button>
@@ -416,23 +414,28 @@ function App() {
         .animate-scanline { animation: scanline 4s linear infinite; }
       `}} />
 
-      {/* 🔥 ИСПРАВЛЕНИЕ: Добавили pt-14 (вместо py-4) чтобы вытолкнуть шапку из-под системной кнопки Закрыть */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
-        <div className="flex items-center justify-between px-6 pt-14 pb-4 max-w-md mx-auto">
+      {/* 🔥 ИСПРАВЛЕНИЕ: Центрированная шапка, уведена из-под системных кнопок */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div className="flex flex-col items-center justify-center pt-14 pb-3 max-w-md mx-auto">
           {isSearchOpen ? (
-            <div className="flex items-center w-full gap-2 animate-fade-in">
-                <Search size={20} className="text-gray-500" />
-                <input autoFocus type="text" placeholder="Поиск товаров..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600"/>
-                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-2"><X size={20} className="text-white"/></button>
+            <div className="flex items-center w-full px-6 gap-3 animate-fade-in">
+                <Search size={16} className="text-gray-500" />
+                <input autoFocus type="text" placeholder="Поиск товаров..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none text-white w-full focus:ring-0 placeholder-gray-600 text-sm"/>
+                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-2"><X size={16} className="text-white"/></button>
             </div>
           ) : (
-            <>
-              <div className="text-2xl font-black tracking-tighter uppercase">Firma</div>
-              <div className="flex items-center gap-4">
-                  <button onClick={() => setIsSearchOpen(true)} className="text-white hover:text-gray-300"><Search size={20} /></button>
-                  <div className="text-xs font-mono text-gray-400">{user ? `ПРИВЕТ, ${user.first_name.toUpperCase()}` : 'ГОСТЬ'}</div>
+            <div className="flex flex-col items-center gap-1 w-full animate-fade-in">
+              <div className="text-xl font-black tracking-widest uppercase">Firma</div>
+              
+              <div className="flex items-center gap-3">
+                  <div className="text-[9px] font-mono text-gray-500">{user ? `ПРИВЕТ, ${user.first_name.toUpperCase()}` : 'ГОСТЬ'}</div>
+                  <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
+                  <button onClick={() => setIsSearchOpen(true)} className="text-gray-400 hover:text-white flex items-center gap-1.5 transition-colors">
+                      <Search size={10} />
+                      <span className="text-[9px] font-mono">ПОИСК</span>
+                  </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </header>
