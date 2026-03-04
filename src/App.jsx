@@ -256,34 +256,32 @@ function App() {
           </div>
         )}
 
-        {/* 🔥 НОВЫЙ ДИЗАЙН КАТЕГОРИЙ (ПЛИТКИ) */}
+        {/* 🔥 ИСПРАВЛЕНИЕ: Компактные и стильные плитки для разделов */}
         {!searchQuery && (
           <div className="px-4 mb-10">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Разделы</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Разделы</h3>
             
-            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
                 {categories.map((cat) => (
                 <button 
                     key={cat} 
                     onClick={() => setSelectedCategory(cat)} 
-                    className={`min-w-[130px] h-32 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden transition-all active:scale-95 flex-shrink-0 border ${
+                    className={`min-w-[100px] h-20 rounded-xl p-3 flex flex-col justify-between relative overflow-hidden transition-all active:scale-95 flex-shrink-0 border ${
                         selectedCategory === cat 
-                        ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]' 
+                        ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.15)]' 
                         : 'bg-[#111] text-gray-400 border-white/5 hover:border-white/20 hover:bg-[#1a1a1a]'
                     }`}
                 >
-                    {/* Декоративная иконка в углу */}
-                    <div className={`self-end transition-colors ${selectedCategory === cat ? 'text-black' : 'text-white/10'}`}>
-                        {cat === 'Избранное' ? <Heart size={28} className={selectedCategory === cat ? "fill-black" : ""} /> : <Tag size={28} />}
+                    <div className={`self-end transition-colors ${selectedCategory === cat ? 'text-black' : 'text-white/20'}`}>
+                        {cat === 'Избранное' ? <Heart size={16} className={selectedCategory === cat ? "fill-black" : ""} /> : <Tag size={16} />}
                     </div>
                     
-                    <span className="text-sm font-black uppercase tracking-wide text-left leading-tight z-10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-left leading-tight z-10">
                         {cat}
                     </span>
 
-                    {/* Абстрактный узор на фоне */}
                     {selectedCategory !== cat && (
-                        <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
+                        <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
                     )}
                 </button>
                 ))}
@@ -296,7 +294,6 @@ function App() {
             <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Загрузка дропа...</span></div>
         ) : (
             <>
-              {/* ПАНЕЛЬ УПРАВЛЕНИЯ СЕТКОЙ */}
               {filteredProducts.length > 0 && (
                   <div className="flex justify-between items-center mb-4 px-1">
                       <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{filteredProducts.length} товаров</span>
@@ -317,7 +314,6 @@ function App() {
                   </div>
               )}
 
-              {/* ДИНАМИЧЕСКАЯ СЕТКА ТОВАРОВ */}
               <div className={`grid ${gridView === 'grid' ? 'grid-cols-2 gap-3' : 'grid-cols-1 gap-6'}`}>
               {filteredProducts.map((product) => {
                   const isLiked = favorites.includes(product.id);
@@ -325,7 +321,6 @@ function App() {
                   return (
                   <div key={product.id} onClick={() => setSelectedProduct(product)} className={`group bg-[#0a0a0a] border border-white/5 rounded-xl cursor-pointer active:scale-95 transition-all relative flex flex-col ${gridView === 'grid' ? 'p-2' : 'p-4'}`}>
                       
-                      {/* Бейдж скидки */}
                       {product.old_price && (
                           <div className="absolute top-4 left-4 z-20 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">Sale</div>
                       )}
