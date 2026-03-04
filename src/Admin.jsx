@@ -16,18 +16,16 @@ const Admin = ({ user, initData }) => {
   // PRODUCT FORM
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
-  const [productOldPrice, setProductOldPrice] = useState(''); // 🔥 ДОБАВЛЕНО ДЛЯ СКИДОК
+  const [productOldPrice, setProductOldPrice] = useState(''); 
   const [productCategory, setProductCategory] = useState('Clothing');
   const [productSizes, setProductSizes] = useState('S,M,L');
   const [productDescription, setProductDescription] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [productFiles, setProductFiles] = useState([]); 
   
-  // ФИЛЬТРЫ ТОВАРОВ
   const [productSearch, setProductSearch] = useState('');
-  const [filterBrandId, setFilterBrandId] = useState(''); // 🔥 ФИЛЬТР ПО БРЕНДУ В АДМИНКЕ
+  const [filterBrandId, setFilterBrandId] = useState(''); 
 
-  // РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
   const [editingProduct, setEditingProduct] = useState(null);
 
   // BRAND FORM
@@ -38,6 +36,9 @@ const Admin = ({ user, initData }) => {
 
   const fileInputRef = useRef(null);
   const brandInputRef = useRef(null);
+
+  // 🔥 НОВОЕ: Стейт для хранения выбранных товаров при модерации
+  const [linkProductIds, setLinkProductIds] = useState({});
 
   const safeId = user.telegram_id || user.id;
 
@@ -69,7 +70,6 @@ const Admin = ({ user, initData }) => {
 
   const fetchProducts = async () => {
     try {
-      // 🔥 ТЕПЕРЬ ТЯНЕМ ВСЕ ТОВАРЫ (И СКРЫТЫЕ ТОЖЕ)
       const encodedInit = encodeURIComponent(initData);
       const res = await fetch(`${API_URL}/admin/products/all?initData=${encodedInit}`);
       if (res.ok) setProducts(await res.json());
@@ -92,7 +92,6 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   }
 
-  // 🔥 ФУНКЦИЯ СКРЫТИЯ/ПОКАЗА ТОВАРА (ГЛАЗИК)
   const handleToggleVisibility = async (productId, e) => {
     e.stopPropagation();
     const formData = new FormData();
@@ -103,7 +102,6 @@ const Admin = ({ user, initData }) => {
         const res = await fetch(`${API_URL}/admin/products/toggle-visibility`, { method: 'POST', body: formData });
         if (res.ok) {
             const data = await res.json();
-            // Обновляем статус мгновенно в интерфейсе
             setProducts(products.map(p => p.id === productId ? { ...p, is_active: data.is_active } : p));
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
         }
@@ -141,8 +139,6 @@ const Admin = ({ user, initData }) => {
     } catch (err) { alert("Ошибка сети"); }
   }
 
-  // --- ACTIONS ---
-
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     if (!productName || !productPrice) return alert("Заполните название и цену");
@@ -153,7 +149,7 @@ const Admin = ({ user, initData }) => {
     formData.append('initData', initData); 
     formData.append('name', productName);
     formData.append('price', productPrice);
-    if (productOldPrice) formData.append('old_price', productOldPrice); // 🔥 ОТПРАВЛЯЕМ СТАРУЮ ЦЕНУ
+    if (productOldPrice) formData.append('old_price', productOldPrice); 
     formData.append('category', productCategory);
     formData.append('sizes', productSizes);
     formData.append('description', productDescription);
@@ -189,7 +185,7 @@ const Admin = ({ user, initData }) => {
       setEditingProduct(prod);
       setProductName(prod.name);
       setProductPrice(prod.price);
-      setProductOldPrice(prod.old_price || ''); // 🔥 ЗАГРУЖАЕМ СТАРУЮ ЦЕНУ
+      setProductOldPrice(prod.old_price || ''); 
       setProductCategory(prod.category || 'Clothing');
       setProductSizes(prod.sizes || 'S,M,L');
       setProductDescription(prod.description || '');
@@ -264,12 +260,20 @@ const Admin = ({ user, initData }) => {
       } catch (e) { console.error(e); }
   }
 
+  // 🔥 ОБНОВЛЕНО: Отправляем выбранный товар при аппруве
   const handleReviewAction = async (reviewId, action) => {
     try {
+        const payload = { initData: initData, review_id: reviewId };
+        
+        // Если одобряем фото и выбран товар, прикрепляем его
+        if (action === 'approve' && linkProductIds[reviewId]) {
+            payload.product_id = parseInt(linkProductIds[reviewId]);
+        }
+
         const res = await fetch(`${API_URL}/admin/reviews/${action}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: initData, review_id: reviewId })
+            body: JSON.stringify(payload)
         });
         if (res.ok) {
             setPendingReviews(prev => prev.filter(r => r.id !== reviewId));
@@ -284,7 +288,6 @@ const Admin = ({ user, initData }) => {
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
   }
 
-  // 🔥 ОБНОВЛЕННЫЙ ПОИСК С УЧЕТОМ ФИЛЬТРА ПО БРЕНДУ
   const filteredProducts = products.filter(p => {
     const term = productSearch.toLowerCase();
     const name = p.name ? p.name.toLowerCase() : '';
@@ -376,7 +379,6 @@ const Admin = ({ user, initData }) => {
                 <input type="text" placeholder="Название товара" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
                 
                 <div className="flex gap-4">
-                    {/* 🔥 ДОБАВЛЕНО ПОЛЕ "СТАРАЯ ЦЕНА" */}
                     <input type="number" placeholder="Новая цена (₽)" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
                     <input type="number" placeholder="Старая цена" value={productOldPrice} onChange={e => setProductOldPrice(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-gray-400"/>
                 </div>
@@ -406,7 +408,6 @@ const Admin = ({ user, initData }) => {
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Список товаров ({filteredProducts.length})</h3>
                 </div>
                 
-                {/* 🔥 НОВЫЙ БЛОК: ПОИСК + ФИЛЬТР ПО БРЕНДУ */}
                 <div className="flex gap-2 mb-6">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
@@ -441,9 +442,7 @@ const Admin = ({ user, initData }) => {
                                     {p.price} ₽
                                 </div>
                                 
-                                {/* 🔥 КНОПКИ УПРАВЛЕНИЯ КАРТОЧКОЙ */}
                                 <div className="absolute top-2 right-2 flex flex-col gap-1">
-                                    {/* Глазик (Скрыть/Показать) */}
                                     <button 
                                         onClick={(e) => handleToggleVisibility(p.id, e)}
                                         className={`p-2 bg-black/50 backdrop-blur rounded-full transition-all ${p.is_active ? 'text-white hover:text-yellow-500' : 'text-gray-500 hover:text-white'}`}
@@ -591,27 +590,45 @@ const Admin = ({ user, initData }) => {
                 </div>
             ) : (
                 pendingReviews.map(review => (
-                    <div key={review.id} className="bg-[#111] rounded-xl overflow-hidden border border-white/10 relative">
+                    <div key={review.id} className="bg-[#111] rounded-xl overflow-hidden border border-white/10 relative flex flex-col">
                         <img 
                             src={`https://firmashop-truear.waw0.amvera.tech${review.image_path}`} 
                             className="w-full h-40 object-cover" 
                         />
-                        <div className="absolute top-2 right-2 flex gap-2">
-                            <button 
-                                onClick={() => handleReviewAction(review.id, 'reject')}
-                                className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
+                        
+                        {/* 🔥 НОВОЕ: Блок привязки товара */}
+                        <div className="p-2 border-b border-white/10 bg-black/50">
+                            <select 
+                                value={linkProductIds[review.id] || ''}
+                                onChange={(e) => setLinkProductIds({...linkProductIds, [review.id]: e.target.value})}
+                                className="w-full bg-[#111] border border-white/20 text-white text-[10px] uppercase font-bold p-2 rounded outline-none"
                             >
-                                <X size={16} strokeWidth={3} />
-                            </button>
-                            <button 
-                                onClick={() => handleReviewAction(review.id, 'approve')}
-                                className="w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
-                            >
-                                <Check size={16} strokeWidth={3} />
-                            </button>
+                                <option value="">Не прикреплять товар</option>
+                                {/* Показываем только активные товары */}
+                                {products.filter(p => p.is_active).map(p => (
+                                    <option key={p.id} value={p.id}>{p.name} ({p.price}₽)</option>
+                                ))}
+                            </select>
                         </div>
-                        <div className="p-2 text-[10px] text-gray-500 font-mono">
-                            User #{review.user_id}
+
+                        <div className="p-3 flex justify-between items-center bg-[#111]">
+                            <div className="text-[10px] text-gray-500 font-mono">
+                                User #{review.user_id}
+                            </div>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => handleReviewAction(review.id, 'reject')}
+                                    className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
+                                >
+                                    <X size={16} strokeWidth={3} />
+                                </button>
+                                <button 
+                                    onClick={() => handleReviewAction(review.id, 'approve')}
+                                    className="w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
+                                >
+                                    <Check size={16} strokeWidth={3} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))
