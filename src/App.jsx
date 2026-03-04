@@ -123,12 +123,10 @@ function App() {
     }
   }
 
-  // 🔥 НОВОЕ: Обработчик лайков для брендов
   const handleToggleBrandLike = async (e, brandId) => {
-    e.stopPropagation(); // Чтобы не провалиться в бренд при клике на лайк
+    e.stopPropagation(); 
     if (!safeUserId) return;
 
-    // Мгновенное (оптимистичное) обновление UI
     setBrands(prev => prev.map(b => {
         if (b.id === brandId) {
             const hasLiked = b.liked_by?.includes(safeUserId);
@@ -277,16 +275,14 @@ function App() {
         {searchQuery && <div className="h-32"></div>}
         
         {!searchQuery && !selectedBrand && brands.length > 0 && (
-          <div className="px-4 mb-10 overflow-x-auto no-scrollbar">
+          <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
              <div className="flex gap-4 justify-start min-w-max px-2 pt-2 pb-1">
                 {brands.map(brand => {
-                    // Проверяем, лайкнул ли текущий юзер этот бренд
                     const isLiked = brand.liked_by?.includes(safeUserId);
                     
                     return (
                         <div key={brand.id} onClick={() => setSelectedBrand(brand)} className="flex flex-col items-center gap-2 cursor-pointer group relative mt-1">
                             
-                            {/* 🔥 Кнопка лайка для бренда (висит поверх лого) */}
                             <button 
                                 onClick={(e) => handleToggleBrandLike(e, brand.id)}
                                 className="absolute -top-2 -right-3 bg-[#1a1a1a] border border-white/10 rounded-full px-1.5 py-1 flex items-center gap-1 z-10 hover:scale-110 active:scale-90 transition-all shadow-xl"
@@ -311,32 +307,30 @@ function App() {
           </div>
         )}
 
+        {/* 🔥 ИСПРАВЛЕНИЕ: СУПЕР-МИНИМАЛИСТИЧНЫЕ КАТЕГОРИИ */}
         {!searchQuery && (
-          <div className="px-4 mb-10">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Разделы</h3>
+          <div className="px-4 mb-8">
+            <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Разделы</h3>
             
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
                 {categories.map((cat) => (
                 <button 
                     key={cat} 
                     onClick={() => setSelectedCategory(cat)} 
-                    className={`min-w-[100px] h-20 rounded-xl p-3 flex flex-col justify-between relative overflow-hidden transition-all active:scale-95 flex-shrink-0 border ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all active:scale-95 whitespace-nowrap ${
                         selectedCategory === cat 
-                        ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.15)]' 
-                        : 'bg-[#111] text-gray-400 border-white/5 hover:border-white/20 hover:bg-[#1a1a1a]'
+                        ? 'bg-white text-black border-white' 
+                        : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30 hover:text-white'
                     }`}
                 >
-                    <div className={`self-end transition-colors ${selectedCategory === cat ? 'text-black' : 'text-white/20'}`}>
-                        {cat === 'Избранное' ? <Heart size={16} className={selectedCategory === cat ? "fill-black" : ""} /> : <Tag size={16} />}
-                    </div>
-                    
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-left leading-tight z-10">
+                    {cat === 'Избранное' ? (
+                        <Heart size={14} className={selectedCategory === cat ? "fill-black" : ""} />
+                    ) : (
+                        <Tag size={14} className={selectedCategory === cat ? "text-black" : "text-gray-500"} />
+                    )}
+                    <span className="text-[10px] font-bold uppercase tracking-widest mt-[1px]">
                         {cat}
                     </span>
-
-                    {selectedCategory !== cat && (
-                        <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
-                    )}
                 </button>
                 ))}
             </div>
