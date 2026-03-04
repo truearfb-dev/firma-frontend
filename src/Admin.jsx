@@ -300,7 +300,7 @@ const Admin = ({ user, initData }) => {
   });
 
   return (
-    <div className="pt-24 pb-24 animate-fade-in px-4">
+    <div className="pt-32 pb-24 animate-fade-in px-4">
       <h1 className="text-3xl font-black uppercase mb-6">РЕЖИМ БОГА <span className="text-red-500">.</span></h1>
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-2">
