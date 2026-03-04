@@ -34,6 +34,9 @@ function App() {
   
   const [gridView, setGridView] = useState('single'); 
 
+  // Вычисляем безопасный ID пользователя
+  const safeUserId = user?.telegram_id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
   const getImageUrl = (url) => {
     if (!url) return null;
     const cleanUrl = url.includes(',') ? url.split(',')[0] : url;
@@ -119,6 +122,38 @@ function App() {
       } catch (error) { console.error("Like error:", error); }
     }
   }
+
+  // 🔥 НОВОЕ: Обработчик лайков для брендов
+  const handleToggleBrandLike = async (e, brandId) => {
+    e.stopPropagation(); // Чтобы не провалиться в бренд при клике на лайк
+    if (!safeUserId) return;
+
+    // Мгновенное (оптимистичное) обновление UI
+    setBrands(prev => prev.map(b => {
+        if (b.id === brandId) {
+            const hasLiked = b.liked_by?.includes(safeUserId);
+            const newLikedBy = hasLiked
+                ? b.liked_by.filter(id => id !== safeUserId)
+                : [...(b.liked_by || []), safeUserId];
+            return { ...b, liked_by: newLikedBy, likes_count: newLikedBy.length };
+        }
+        return b;
+    }));
+
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+
+    if (initData) {
+        try {
+            await fetch(`${API_URL}/brands/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ initData: initData, brand_id: brandId })
+            });
+        } catch (error) { console.error("Brand like error:", error); }
+    }
+  };
 
   const handleAddToCart = (product, size) => {
     const itemToAdd = { ...product, selectedSize: size };
@@ -243,20 +278,39 @@ function App() {
         
         {!searchQuery && !selectedBrand && brands.length > 0 && (
           <div className="px-4 mb-10 overflow-x-auto no-scrollbar">
-             <div className="flex gap-4 justify-start min-w-max px-2">
-                {brands.map(brand => (
-                    <div key={brand.id} onClick={() => setSelectedBrand(brand)} className="flex flex-col items-center gap-2 cursor-pointer group">
-                        <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden group-active:scale-90 transition-all">
-                            {brand.logo_url ? <img src={getImageUrl(brand.logo_url)} className="w-full h-full object-cover" /> : <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>}
+             <div className="flex gap-4 justify-start min-w-max px-2 pt-2 pb-1">
+                {brands.map(brand => {
+                    // Проверяем, лайкнул ли текущий юзер этот бренд
+                    const isLiked = brand.liked_by?.includes(safeUserId);
+                    
+                    return (
+                        <div key={brand.id} onClick={() => setSelectedBrand(brand)} className="flex flex-col items-center gap-2 cursor-pointer group relative mt-1">
+                            
+                            {/* 🔥 Кнопка лайка для бренда (висит поверх лого) */}
+                            <button 
+                                onClick={(e) => handleToggleBrandLike(e, brand.id)}
+                                className="absolute -top-2 -right-3 bg-[#1a1a1a] border border-white/10 rounded-full px-1.5 py-1 flex items-center gap-1 z-10 hover:scale-110 active:scale-90 transition-all shadow-xl"
+                            >
+                                <Heart size={10} className={isLiked ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                {brand.likes_count > 0 && (
+                                    <span className="text-[9px] font-mono font-bold text-white leading-none pr-0.5">
+                                        {brand.likes_count}
+                                    </span>
+                                )}
+                            </button>
+
+                            <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden group-active:scale-90 transition-all">
+                                {brand.logo_url ? <img src={getImageUrl(brand.logo_url)} className="w-full h-full object-cover" /> : <span className="font-bold text-xs uppercase">{brand.name.substring(0,2)}</span>}
+                            </div>
+                            
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{brand.name}</span>
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{brand.name}</span>
-                    </div>
-                ))}
+                    )
+                })}
              </div>
           </div>
         )}
 
-        {/* 🔥 ИСПРАВЛЕНИЕ: Компактные и стильные плитки для разделов */}
         {!searchQuery && (
           <div className="px-4 mb-10">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Разделы</h3>
