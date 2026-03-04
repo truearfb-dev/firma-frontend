@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package, Heart, X, Search } from 'lucide-react'
+import { Loader, CheckCircle, Copy, Package, Heart, X, Search, Square, LayoutGrid } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
@@ -7,7 +7,7 @@ import Orders from './Orders'
 import Community from './Community'
 import Admin from './Admin'
 
-const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; 
 const API_URL = `${BASE_URL}/api`;
 const BOT_USERNAME = 'Firma_projectBot'; 
 
@@ -31,13 +31,13 @@ function App() {
   const [selectedBrand, setSelectedBrand] = useState(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // 🔥 ДОБАВЛЕНО: Состояние для вида сетки (один крупно или два мелких)
+  const [gridView, setGridView] = useState('single'); 
 
-  // 🔥 ИСПРАВЛЕНИЕ: Функция теперь понимает список "img1.jpg,img2.jpg" и берет первую
   const getImageUrl = (url) => {
     if (!url) return null;
-    // Берем только первую часть до запятой
     const cleanUrl = url.includes(',') ? url.split(',')[0] : url;
-    
     if (cleanUrl.startsWith('http')) return cleanUrl;
     return `${BASE_URL}${cleanUrl}`;
   }
@@ -47,10 +47,8 @@ function App() {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
-      
-      // 🔥 ЗАЩИТА ОТ СЛУЧАЙНОГО ЗАКРЫТИЯ ПРИ СВАЙПЕ ВНИЗ
       tg.enableClosingConfirmation(); 
-      if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); // Для самых новых версий Telegram
+      if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); 
       
       const rawInitData = tg.initData; 
       setInitData(rawInitData);
@@ -241,7 +239,9 @@ function App() {
             )}
           </section>
         )}
+        
         {searchQuery && <div className="h-32"></div>}
+        
         {!searchQuery && !selectedBrand && brands.length > 0 && (
           <div className="px-4 mb-10 overflow-x-auto no-scrollbar">
              <div className="flex gap-4 justify-start min-w-max px-2">
@@ -256,8 +256,9 @@ function App() {
              </div>
           </div>
         )}
+
         {!searchQuery && (
-          <div className="px-4 mb-8 overflow-x-auto no-scrollbar">
+          <div className="px-4 mb-6 overflow-x-auto no-scrollbar">
             <div className="flex gap-2 justify-center min-w-max">
                 {categories.map(cat => (
                 <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedCategory === cat ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'}`}>
@@ -267,35 +268,82 @@ function App() {
             </div>
           </div>
         )}
+
         <section className="px-4 pb-8">
         {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader className="animate-spin text-white" size={32} /><span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Загрузка дропа...</span></div>
         ) : (
-            <div className="grid grid-cols-1 gap-6">
-            {filteredProducts.map((product) => {
-                const isLiked = favorites.includes(product.id);
-                // 🔥 ИСПРАВЛЕНИЕ: Получаем правильную обложку
-                const imgUrl = getImageUrl(product.image_url);
-                return (
-                <div key={product.id} onClick={() => setSelectedProduct(product)} className="group bg-[#0a0a0a] border border-white/5 p-4 rounded-xl cursor-pointer active:scale-95 transition-all relative">
-                    <button onClick={(e) => handleToggleFavorite(e, product.id)} className="absolute top-6 right-6 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all">
-                        <Heart size={18} className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
-                    </button>
-                    <div className="aspect-square bg-[#111] mb-4 overflow-hidden rounded-lg relative">
-                      {imgUrl && <img src={imgUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
-                    </div>
-                    <div className="flex justify-between items-end">
-                    <div><h3 className="text-lg font-bold uppercase mb-1">{product.name}</h3><p className="text-xs text-gray-500">{product.brand ? product.brand.name : 'Firma Archive'}</p></div>
-                    <div className="text-lg font-mono font-bold">{product.price} ₽</div>
-                    </div>
-                    <button className="w-full mt-4 border border-white/20 text-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Смотреть</button>
-                </div>
-                )
-            })}
-            {filteredProducts.length === 0 && (
-                <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{searchQuery ? `Ничего не найдено по запросу "${searchQuery}"` : "Товары не найдены"}</div>
-            )}
-            </div>
+            <>
+              {/* 🔥 ПАНЕЛЬ УПРАВЛЕНИЯ СЕТКОЙ */}
+              {filteredProducts.length > 0 && (
+                  <div className="flex justify-between items-center mb-4 px-1">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{filteredProducts.length} товаров</span>
+                      <div className="flex gap-1.5 bg-[#111] p-1 rounded-lg border border-white/5">
+                          <button 
+                              onClick={() => setGridView('single')} 
+                              className={`p-1.5 rounded transition-all ${gridView === 'single' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                          >
+                              <Square size={14} />
+                          </button>
+                          <button 
+                              onClick={() => setGridView('grid')} 
+                              className={`p-1.5 rounded transition-all ${gridView === 'grid' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                          >
+                              <LayoutGrid size={14} />
+                          </button>
+                      </div>
+                  </div>
+              )}
+
+              {/* 🔥 ДИНАМИЧЕСКАЯ СЕТКА ТОВАРОВ */}
+              <div className={`grid ${gridView === 'grid' ? 'grid-cols-2 gap-3' : 'grid-cols-1 gap-6'}`}>
+              {filteredProducts.map((product) => {
+                  const isLiked = favorites.includes(product.id);
+                  const imgUrl = getImageUrl(product.image_url);
+                  return (
+                  <div key={product.id} onClick={() => setSelectedProduct(product)} className={`group bg-[#0a0a0a] border border-white/5 rounded-xl cursor-pointer active:scale-95 transition-all relative flex flex-col ${gridView === 'grid' ? 'p-2' : 'p-4'}`}>
+                      
+                      {/* Бейдж скидки */}
+                      {product.old_price && (
+                          <div className="absolute top-4 left-4 z-20 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">Sale</div>
+                      )}
+
+                      <button onClick={(e) => handleToggleFavorite(e, product.id)} className={`absolute z-20 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all ${gridView === 'grid' ? 'top-3 right-3 w-8 h-8' : 'top-6 right-6 w-10 h-10'}`}>
+                          <Heart size={gridView === 'grid' ? 14 : 18} className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
+                      </button>
+                      
+                      <div className={`bg-[#111] overflow-hidden rounded-lg relative ${gridView === 'grid' ? 'aspect-[4/5] mb-3' : 'aspect-square mb-4'}`}>
+                        {imgUrl && <img src={imgUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"/>}
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 flex-1 justify-between">
+                          <div className="flex justify-between items-end gap-2">
+                              <div className="flex-1 min-w-0">
+                                  <h3 className={`${gridView === 'grid' ? 'text-[11px]' : 'text-lg'} font-bold uppercase mb-0.5 truncate`}>{product.name}</h3>
+                                  <p className="text-[9px] text-gray-500 truncate">{product.brand ? product.brand.name : 'Firma Archive'}</p>
+                              </div>
+                              <div className="text-right whitespace-nowrap">
+                                  {/* 🔥 ВЫВОД СТАРОЙ ЦЕНЫ */}
+                                  {product.old_price && (
+                                      <div className="text-[9px] text-gray-500 line-through leading-none mb-1">{product.old_price} ₽</div>
+                                  )}
+                                  <div className={`${gridView === 'grid' ? 'text-xs' : 'text-lg'} font-mono font-bold leading-none ${product.old_price ? 'text-red-500' : 'text-white'}`}>{product.price} ₽</div>
+                              </div>
+                          </div>
+                          
+                          <button className={`w-full border border-white/20 text-white font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all rounded-lg ${gridView === 'grid' ? 'py-2 mt-1 text-[9px]' : 'py-3 mt-2 text-xs'}`}>
+                              Смотреть
+                          </button>
+                      </div>
+                  </div>
+                  )
+              })}
+              </div>
+
+              {filteredProducts.length === 0 && (
+                  <div className="text-center py-12 text-gray-500 font-mono text-xs uppercase">{searchQuery ? `Ничего не найдено по запросу "${searchQuery}"` : "Товары не найдены"}</div>
+              )}
+            </>
         )}
         </section>
     </div>
