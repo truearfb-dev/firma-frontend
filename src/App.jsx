@@ -177,7 +177,6 @@ function App() {
     } catch (error) { console.error(error); }
   }
 
-  // 🔥 НОВОЕ: Функция для открытия товара из Community
   const handleOpenProductFromCommunity = (productId) => {
       const fullProduct = products.find(p => p.id === productId);
       if (fullProduct) {
@@ -224,7 +223,8 @@ function App() {
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
   const renderProfile = () => (
-    <div className="pt-32 px-6 text-center animate-fade-in pb-20">
+    // Увеличили отступ pt-32 -> pt-36
+    <div className="pt-36 px-6 text-center animate-fade-in pb-20">
       <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl border border-white/5">
         {user?.photo_url ? <img src={user.photo_url} className="w-full h-full rounded-full" /> : <span>👤</span>}
       </div>
@@ -254,7 +254,8 @@ function App() {
   const renderShop = () => (
     <div className="animate-fade-in">
         {!searchQuery && (
-          <section className="pt-28 pb-6 px-4 flex flex-col items-center justify-center text-center">
+          // Увеличили отступ pt-28 -> pt-36
+          <section className="pt-36 pb-6 px-4 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
               <div className="animate-slide-up">
                   <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> СБРОСИТЬ ФИЛЬТР</button>
@@ -415,8 +416,9 @@ function App() {
         .animate-scanline { animation: scanline 4s linear infinite; }
       `}} />
 
+      {/* 🔥 ИСПРАВЛЕНИЕ: Добавили pt-14 (вместо py-4) чтобы вытолкнуть шапку из-под системной кнопки Закрыть */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
-        <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto h-16">
+        <div className="flex items-center justify-between px-6 pt-14 pb-4 max-w-md mx-auto">
           {isSearchOpen ? (
             <div className="flex items-center w-full gap-2 animate-fade-in">
                 <Search size={20} className="text-gray-500" />
@@ -434,13 +436,13 @@ function App() {
           )}
         </div>
       </header>
+
       <main className="max-w-md mx-auto">
         {isOrdersOpen && user && <Orders user={user} initData={initData} onClose={() => setIsOrdersOpen(false)} />}
         {isCartOpen && <Cart items={cart} onClose={() => setIsCartOpen(false)} onRemove={handleRemoveFromCart} onCheckout={handleCheckout} />}
         {selectedProduct && !isCartOpen && !isOrdersOpen && <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'shop' && renderShop()}
         
-        {/* 🔥 НОВОЕ: Передаем функцию открытия товара в Community */}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'community' && (
             <Community user={user} onProductClick={handleOpenProductFromCommunity} />
         )}
@@ -448,6 +450,7 @@ function App() {
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'profile' && renderProfile()}
         {!selectedProduct && !isCartOpen && !isOrdersOpen && activeTab === 'admin' && (<Admin user={user} initData={initData} />)}
       </main>
+      
       {!selectedProduct && !isCartOpen && !isOrdersOpen && cart.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
            <button onClick={() => setIsCartOpen(true)} className="w-full bg-white text-black p-4 rounded-xl flex items-center justify-between shadow-xl active:scale-95 transition-all">
