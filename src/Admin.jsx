@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Plus, Upload, Loader, Package, Tag, Shield, Check, X, Edit2, RotateCcw, Search, Trash2, Eye, EyeOff } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; 
 
@@ -16,18 +16,23 @@ const Admin = ({ user, initData }) => {
   // PRODUCT FORM
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
+  const [productOldPrice, setProductOldPrice] = useState(''); // 🔥 ДОБАВЛЕНО ДЛЯ СКИДОК
   const [productCategory, setProductCategory] = useState('Clothing');
   const [productSizes, setProductSizes] = useState('S,M,L');
-  const [productDescription, setProductDescription] = useState(''); // 🔥 ДОБАВЛЕНО
+  const [productDescription, setProductDescription] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [productFiles, setProductFiles] = useState([]); 
   
+  // ФИЛЬТРЫ ТОВАРОВ
   const [productSearch, setProductSearch] = useState('');
+  const [filterBrandId, setFilterBrandId] = useState(''); // 🔥 ФИЛЬТР ПО БРЕНДУ В АДМИНКЕ
+
+  // РЕЖИМ РЕДАКТИРОВАНИЯ ТОВАРА
   const [editingProduct, setEditingProduct] = useState(null);
 
   // BRAND FORM
   const [brandName, setBrandName] = useState('');
-  const [brandDescription, setBrandDescription] = useState(''); // 🔥 ДОБАВЛЕНО
+  const [brandDescription, setBrandDescription] = useState('');
   const [brandFile, setBrandFile] = useState(null);
   const [editingBrand, setEditingBrand] = useState(null);
 
@@ -64,7 +69,9 @@ const Admin = ({ user, initData }) => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(`${API_URL}/products`);
+      // 🔥 ТЕПЕРЬ ТЯНЕМ ВСЕ ТОВАРЫ (И СКРЫТЫЕ ТОЖЕ)
+      const encodedInit = encodeURIComponent(initData);
+      const res = await fetch(`${API_URL}/admin/products/all?initData=${encodedInit}`);
       if (res.ok) setProducts(await res.json());
     } catch (e) { console.error(e); }
   };
@@ -85,6 +92,24 @@ const Admin = ({ user, initData }) => {
     } catch (e) { console.error(e); }
   }
 
+  // 🔥 ФУНКЦИЯ СКРЫТИЯ/ПОКАЗА ТОВАРА (ГЛАЗИК)
+  const handleToggleVisibility = async (productId, e) => {
+    e.stopPropagation();
+    const formData = new FormData();
+    formData.append('initData', initData);
+    formData.append('product_id', productId);
+
+    try {
+        const res = await fetch(`${API_URL}/admin/products/toggle-visibility`, { method: 'POST', body: formData });
+        if (res.ok) {
+            const data = await res.json();
+            // Обновляем статус мгновенно в интерфейсе
+            setProducts(products.map(p => p.id === productId ? { ...p, is_active: data.is_active } : p));
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+        }
+    } catch (err) { alert("Ошибка сети"); }
+  }
+
   const handleDeleteProduct = async (productId, e) => {
     e.stopPropagation(); 
     if (!window.confirm("Удалить этот товар навсегда?")) return;
@@ -102,7 +127,7 @@ const Admin = ({ user, initData }) => {
 
   const handleDeleteBrand = async (brandId, e) => {
     e.stopPropagation();
-    if (!window.confirm("Удалить этот бренд? (Товары этого бренда не удалятся, а станут 'Без бренда')")) return;
+    if (!window.confirm("Удалить этот бренд? (Товары станут 'Без бренда')")) return;
     const formData = new FormData();
     formData.append('initData', initData);
     formData.append('brand_id', brandId);
@@ -128,9 +153,10 @@ const Admin = ({ user, initData }) => {
     formData.append('initData', initData); 
     formData.append('name', productName);
     formData.append('price', productPrice);
+    if (productOldPrice) formData.append('old_price', productOldPrice); // 🔥 ОТПРАВЛЯЕМ СТАРУЮ ЦЕНУ
     formData.append('category', productCategory);
     formData.append('sizes', productSizes);
-    formData.append('description', productDescription); // 🔥 Отправляем описание
+    formData.append('description', productDescription);
     if (selectedBrandId) formData.append('brand_id', selectedBrandId);
     
     if (productFiles.length > 0) {
@@ -163,9 +189,10 @@ const Admin = ({ user, initData }) => {
       setEditingProduct(prod);
       setProductName(prod.name);
       setProductPrice(prod.price);
+      setProductOldPrice(prod.old_price || ''); // 🔥 ЗАГРУЖАЕМ СТАРУЮ ЦЕНУ
       setProductCategory(prod.category || 'Clothing');
       setProductSizes(prod.sizes || 'S,M,L');
-      setProductDescription(prod.description || ''); // 🔥 Загружаем описание
+      setProductDescription(prod.description || '');
       setSelectedBrandId(prod.brand_id || '');
       setProductFiles([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -173,7 +200,7 @@ const Admin = ({ user, initData }) => {
 
   const cancelEditProduct = () => {
       setEditingProduct(null);
-      setProductName(''); setProductPrice(''); setProductFiles([]); setProductSizes('S,M,L'); setProductDescription('');
+      setProductName(''); setProductPrice(''); setProductOldPrice(''); setProductFiles([]); setProductSizes('S,M,L'); setProductDescription('');
   }
 
   const handleBrandSubmit = async (e) => {
@@ -185,7 +212,7 @@ const Admin = ({ user, initData }) => {
     const formData = new FormData();
     formData.append('initData', initData); 
     formData.append('name', brandName);
-    formData.append('description', brandDescription); // 🔥 Отправляем описание
+    formData.append('description', brandDescription); 
     if (brandFile) formData.append('file', brandFile); 
 
     let url = `${API_URL}/admin/brands`;
@@ -211,7 +238,7 @@ const Admin = ({ user, initData }) => {
   const startEditBrand = (brand) => {
     setEditingBrand(brand);
     setBrandName(brand.name);
-    setBrandDescription(brand.description || ''); // 🔥 Загружаем описание
+    setBrandDescription(brand.description || ''); 
     setBrandFile(null); 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -257,12 +284,16 @@ const Admin = ({ user, initData }) => {
     return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
   }
 
+  // 🔥 ОБНОВЛЕННЫЙ ПОИСК С УЧЕТОМ ФИЛЬТРА ПО БРЕНДУ
   const filteredProducts = products.filter(p => {
     const term = productSearch.toLowerCase();
     const name = p.name ? p.name.toLowerCase() : '';
     const desc = p.description ? p.description.toLowerCase() : '';
     const cat = p.category ? p.category.toLowerCase() : '';
-    return name.includes(term) || desc.includes(term) || cat.includes(term);
+    const matchesSearch = name.includes(term) || desc.includes(term) || cat.includes(term);
+    const matchesBrand = filterBrandId ? String(p.brand_id) === String(filterBrandId) : true;
+    
+    return matchesSearch && matchesBrand;
   });
 
   return (
@@ -345,15 +376,19 @@ const Admin = ({ user, initData }) => {
                 <input type="text" placeholder="Название товара" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
                 
                 <div className="flex gap-4">
-                    <input type="number" placeholder="Цена (₽)" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+                    {/* 🔥 ДОБАВЛЕНО ПОЛЕ "СТАРАЯ ЦЕНА" */}
+                    <input type="number" placeholder="Новая цена (₽)" value={productPrice} onChange={e => setProductPrice(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
+                    <input type="number" placeholder="Старая цена" value={productOldPrice} onChange={e => setProductOldPrice(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-gray-400"/>
+                </div>
+
+                <div className="flex gap-4">
+                    <input type="text" placeholder="Размеры (S,M,L)" value={productSizes} onChange={e => setProductSizes(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
                     <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="bg-[#111] border border-white/10 rounded-xl px-4 text-white outline-none w-1/2">
                         <option value="">Без бренда</option>
                         {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                 </div>
-                 <input type="text" placeholder="Размеры (S,M,L)" value={productSizes} onChange={e => setProductSizes(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
 
-                {/* 🔥 ПОЛЕ ОПИСАНИЯ ТОВАРА */}
                 <textarea 
                     placeholder="Описание товара (материал, посадка, детали...)" 
                     value={productDescription} 
@@ -371,37 +406,61 @@ const Admin = ({ user, initData }) => {
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Список товаров ({filteredProducts.length})</h3>
                 </div>
                 
-                <div className="relative mb-6">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                    <input 
-                        type="text" 
-                        placeholder="Найти товар..." 
-                        value={productSearch}
-                        onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-white/30 outline-none transition-all"
-                    />
+                {/* 🔥 НОВЫЙ БЛОК: ПОИСК + ФИЛЬТР ПО БРЕНДУ */}
+                <div className="flex gap-2 mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Найти товар..." 
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                            className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-white/30 outline-none transition-all"
+                        />
+                    </div>
+                    <select 
+                        value={filterBrandId} 
+                        onChange={(e) => setFilterBrandId(e.target.value)}
+                        className="bg-[#111] border border-white/10 rounded-xl px-3 text-[10px] uppercase font-bold text-white outline-none w-1/3"
+                    >
+                        <option value="">Все бренды</option>
+                        {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     {filteredProducts.length > 0 ? (
                         filteredProducts.map(p => (
-                            <div key={p.id} className="bg-[#111] rounded-lg p-2 border border-white/5 relative group animate-slide-up">
+                            <div key={p.id} className={`bg-[#111] rounded-lg p-2 border border-white/5 relative group animate-slide-up transition-all ${!p.is_active ? 'opacity-40 grayscale' : ''}`}>
                                 <div className="aspect-square bg-black rounded overflow-hidden mb-2">
                                     <img src={getImgUrl(p.image_url)} className="w-full h-full object-cover"/>
                                 </div>
                                 <div className="text-[10px] font-bold uppercase truncate">{p.name}</div>
-                                <div className="text-xs font-mono text-gray-400">{p.price} ₽</div>
+                                <div className="text-xs font-mono text-gray-400">
+                                    {p.old_price && <span className="line-through text-gray-600 mr-1">{p.old_price}</span>}
+                                    {p.price} ₽
+                                </div>
                                 
-                                <div className="absolute top-2 right-2 flex gap-1">
+                                {/* 🔥 КНОПКИ УПРАВЛЕНИЯ КАРТОЧКОЙ */}
+                                <div className="absolute top-2 right-2 flex flex-col gap-1">
+                                    {/* Глазик (Скрыть/Показать) */}
+                                    <button 
+                                        onClick={(e) => handleToggleVisibility(p.id, e)}
+                                        className={`p-2 bg-black/50 backdrop-blur rounded-full transition-all ${p.is_active ? 'text-white hover:text-yellow-500' : 'text-gray-500 hover:text-white'}`}
+                                    >
+                                        {p.is_active ? <Eye size={12} /> : <EyeOff size={12} />}
+                                    </button>
+                                    
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); startEditProduct(p); }}
-                                        className="p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-yellow-500 hover:text-black transition-all"
+                                        className="p-2 bg-black/50 backdrop-blur rounded-full text-white hover:text-yellow-500 transition-all"
                                     >
                                         <Edit2 size={12} />
                                     </button>
+
                                     <button 
                                         onClick={(e) => handleDeleteProduct(p.id, e)}
-                                        className="p-2 bg-black/50 backdrop-blur rounded-full text-white hover:bg-red-500 hover:text-white transition-all"
+                                        className="p-2 bg-black/50 backdrop-blur rounded-full text-white hover:text-red-500 transition-all"
                                     >
                                         <Trash2 size={12} />
                                     </button>
@@ -446,7 +505,6 @@ const Admin = ({ user, initData }) => {
 
                 <input type="text" placeholder="Название бренда" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
                 
-                {/* 🔥 ПОЛЕ ОПИСАНИЯ БРЕНДА */}
                 <textarea 
                     placeholder="Описание бренда (история, стиль...)" 
                     value={brandDescription} 
