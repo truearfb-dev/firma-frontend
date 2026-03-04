@@ -34,7 +34,6 @@ function App() {
   
   const [gridView, setGridView] = useState('single'); 
 
-  // Вычисляем безопасный ID пользователя
   const safeUserId = user?.telegram_id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
   const getImageUrl = (url) => {
@@ -256,7 +255,7 @@ function App() {
   const renderShop = () => (
     <div className="animate-fade-in">
         {!searchQuery && (
-          <section className="pt-32 pb-8 px-6 flex flex-col items-center justify-center text-center">
+          <section className="pt-28 pb-6 px-4 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
               <div className="animate-slide-up">
                   <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> СБРОСИТЬ ФИЛЬТР</button>
@@ -264,10 +263,22 @@ function App() {
                   <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Официальная коллекция"}</p>
               </div>
             ) : (
-              <>
-                  <p className="text-xs font-bold tracking-[0.2em] text-gray-500 mb-4 uppercase">OFFICIAL</p>
-                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] mb-8">FIRMA<br/><span className="text-gray-600">ARCHIVE</span></h1>
-              </>
+              // 🔥 НОВАЯ АНИМАЦИЯ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ
+              <div className="relative w-full py-12 flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/5 bg-[#0a0a0a] shadow-[0_0_40px_rgba(255,255,255,0.02)]">
+                  
+                  {/* Фоновые анимированные сферы (Glow effect) */}
+                  <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full blur-[50px] animate-float"></div>
+                  <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-[60px] animate-float-delayed"></div>
+                  
+                  {/* Сканирующая линия (эффект радара/лазера) */}
+                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent animate-scanline"></div>
+
+                  <p className="text-[10px] font-bold tracking-[0.3em] text-gray-500 mb-4 uppercase relative z-10">OFFICIAL</p>
+                  <h1 className="text-6xl font-black tracking-tighter leading-[0.85] relative z-10">
+                      <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">FIRMA</span><br/>
+                      <span className="text-transparent bg-clip-text bg-gradient-to-b from-gray-400 to-gray-700">ARCHIVE</span>
+                  </h1>
+              </div>
             )}
           </section>
         )}
@@ -307,7 +318,6 @@ function App() {
           </div>
         )}
 
-        {/* 🔥 ИСПРАВЛЕНИЕ: СУПЕР-МИНИМАЛИСТИЧНЫЕ КАТЕГОРИИ */}
         {!searchQuery && (
           <div className="px-4 mb-8">
             <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Разделы</h3>
@@ -415,6 +425,25 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-white selection:text-black">
+      {/* Вставляем блок кастомных стилей для анимаций */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes float {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+          50% { transform: translateY(-20px) scale(1.2); opacity: 0.6; }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 6s ease-in-out 3s infinite; }
+        
+        @keyframes scanline {
+          0% { transform: translateY(-100%); opacity: 0; }
+          10% { opacity: 0.5; }
+          50% { opacity: 0.1; }
+          90% { opacity: 0.5; }
+          100% { transform: translateY(1000%); opacity: 0; }
+        }
+        .animate-scanline { animation: scanline 5s linear infinite; }
+      `}} />
+
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
         <div className="flex items-center justify-between px-6 py-4 max-w-md mx-auto h-16">
           {isSearchOpen ? (
