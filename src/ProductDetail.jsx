@@ -18,7 +18,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
   return (
     <div className="fixed inset-0 z-[60] bg-black text-white flex flex-col animate-fade-in">
       
-      {/* 🔥 ИСПРАВЛЕНИЕ: Опустили кнопку НАЗАД (top-24 вместо top-4), чтобы она не перекрывалась системной шапкой */}
       <button 
         onClick={onBack}
         className="absolute top-24 left-4 z-[100] bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 active:scale-95 transition-all"
@@ -26,22 +25,37 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         <ArrowLeft size={24} />
       </button>
 
-      {/* ЗОНА СКРОЛЛА */}
       <div className="flex-1 overflow-y-auto relative no-scrollbar">
         
         <div className="w-full h-[55vh] relative bg-[#111]">
+          {/* Если есть скидка — вешаем красный бейдж прямо на фото */}
+          {product.old_price && (
+              <div className="absolute top-24 right-4 z-20 bg-red-500 text-white text-xs font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
+                  Sale
+              </div>
+          )}
           <ImageSlider imagesStr={product.image_url} />
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none" />
         </div>
 
         <div className="px-6 -mt-8 relative z-10">
           <div className="flex justify-between items-start mb-4">
-            <h1 className="text-3xl font-black uppercase leading-tight max-w-[70%]">
+            <h1 className="text-3xl font-black uppercase leading-tight max-w-[65%]">
               {product.name}
             </h1>
-            <div className="text-2xl font-mono font-bold text-white">
-              {product.price} ₽
+            
+            {/* 🔥 ОБНОВЛЕНО: Блок цены со скидкой */}
+            <div className="text-right">
+              {product.old_price && (
+                  <div className="text-sm font-mono text-gray-500 line-through leading-none mb-1">
+                      {product.old_price} ₽
+                  </div>
+              )}
+              <div className={`text-2xl font-mono font-bold leading-none ${product.old_price ? 'text-red-500' : 'text-white'}`}>
+                {product.price} ₽
+              </div>
             </div>
+
           </div>
 
           <div className="flex gap-2 mb-6">
@@ -83,12 +97,10 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             </p>
           </div>
 
-          {/* ЖЕЛЕЗОБЕТОННАЯ РАСПОРКА - 192px пустого места в конце контента */}
           <div className="h-48 w-full shrink-0"></div>
         </div>
       </div>
 
-      {/* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ (Абсолютная, поверх скролла) */}
       <div className="absolute bottom-0 left-0 right-0 p-6 pt-24 bg-gradient-to-t from-black via-black to-transparent z-[80] pointer-events-none flex flex-col justify-end">
         <button 
           onClick={handleAddToCart}
