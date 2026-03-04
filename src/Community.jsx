@@ -3,12 +3,9 @@ import { Camera, Loader, X, Heart, Trash2, ShoppingBag } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api'; 
 
-// 🔥 ОБНОВЛЕНО: Принимаем onProductClick
 const Community = ({ user, onProductClick }) => {
   const [reviews, setReviews] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  
-  // 🔥 ОБНОВЛЕНО: Теперь храним не просто ссылку на картинку, а весь объект отзыва
   const [selectedReview, setSelectedReview] = useState(null); 
   const fileInputRef = useRef(null);
 
@@ -109,7 +106,7 @@ const Community = ({ user, onProductClick }) => {
   }
 
   return (
-    <div className="pt-32 pb-24 px-4 animate-fade-in min-h-screen">
+    <div className="pt-20 pb-24 px-4 animate-fade-in min-h-screen">
       
       <div className="flex justify-between items-end mb-8">
         <div>
@@ -140,7 +137,6 @@ const Community = ({ user, onProductClick }) => {
                 </button>
             )}
 
-            {/* 🔥 НОВОЕ: Индикатор наличия товара на фото */}
             {review.linked_product && (
                 <div className="absolute top-2 left-2 z-10 p-1.5 bg-black/50 backdrop-blur-md border border-white/10 rounded-full text-white shadow-lg">
                     <ShoppingBag size={12} />
@@ -149,7 +145,7 @@ const Community = ({ user, onProductClick }) => {
 
             <img 
                 src={getImgUrl(review.image_path)} 
-                onClick={() => setSelectedReview(review)} // Открываем фуллскрин, сохраняя весь объект
+                onClick={() => setSelectedReview(review)} 
                 className="w-full h-auto object-cover grayscale group-hover:grayscale-0 transition-all duration-500 cursor-pointer"
             />
             
@@ -196,33 +192,33 @@ const Community = ({ user, onProductClick }) => {
           </div>
       )}
 
-      {/* ФУЛЛСКРИН ПРОСМОТР */}
       {selectedReview && (
           <div 
-              className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
+              className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
               onClick={() => setSelectedReview(null)}
           >
+              {/* 🔥 ИСПРАВЛЕНИЕ: Опустили крестик на безопасное расстояние (top-32) */}
               <button 
-                  className="absolute top-24 right-6 z-[101] p-3 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-white shadow-xl hover:bg-black/70 active:scale-90 transition-all"
+                  className="absolute top-32 right-6 z-[101] p-3 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-white shadow-xl hover:bg-black/70 active:scale-90 transition-all"
                   onClick={() => setSelectedReview(null)}
               >
                   <X size={24} />
               </button>
               
+              {/* 🔥 ИСПРАВЛЕНИЕ: Добавили mt-12, чтобы фото не наезжало на крестик, и уменьшили max-h */}
               <img 
                   src={getImgUrl(selectedReview.image_path)} 
-                  className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl animate-slide-up mt-8"
+                  className="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl animate-slide-up mt-12"
                   onClick={(e) => e.stopPropagation()} 
               />
 
-              {/* 🔥 НОВОЕ: Всплывающая карточка товара (Shoppable) */}
               {selectedReview.linked_product && (
                   <div 
                       className="absolute bottom-10 left-4 right-4 bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl p-3 flex items-center gap-4 cursor-pointer shadow-2xl active:scale-95 transition-all animate-slide-up"
                       onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedReview(null); // Закрываем фуллскрин
-                          onProductClick(selectedReview.linked_product.id); // Открываем карточку товара
+                          setSelectedReview(null); 
+                          onProductClick(selectedReview.linked_product.id); 
                       }}
                   >
                       <div className="w-14 h-14 bg-white/5 rounded-lg overflow-hidden shrink-0 border border-white/10">
