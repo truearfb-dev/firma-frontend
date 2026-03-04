@@ -106,7 +106,7 @@ const Community = ({ user, onProductClick }) => {
   }
 
   return (
-    <div className="pt-20 pb-24 px-4 animate-fade-in min-h-screen">
+    <div className="pt-32 pb-24 px-4 animate-fade-in min-h-screen">
       
       <div className="flex justify-between items-end mb-8">
         <div>
