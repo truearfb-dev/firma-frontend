@@ -1,125 +1,323 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ShoppingBag, AlertCircle } from 'lucide-react';
-import ImageSlider from './ImageSlider'; 
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Heart, ShoppingBag, Loader, Camera, Download, Sparkles, X, AlertCircle } from 'lucide-react';
+
+const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
 const ProductDetail = ({ product, onBack, onAddToCart }) => {
-  const [selectedSize, setSelectedSize] = useState(null);
-  
-  const sizes = product.sizes ? product.sizes.split(',').map(s => s.trim()) : [];
+    const [selectedSize, setSelectedSize] = useState('');
+    const [isAdded, setIsAdded] = useState(false);
+    
+    // Стейты для виртуальной примерочной
+    const [isTryOnModalOpen, setIsTryOnModalOpen] = useState(false);
+    const [tryonStatus, setTryonStatus] = useState(null);
+    const [userPhoto, setUserPhoto] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [tryonResult, setTryonResult] = useState(null);
+    const [tryonError, setTryonError] = useState(null);
+    
+    const fileInputRef = useRef(null);
 
-  const handleAddToCart = () => {
-    if (sizes.length > 0 && !selectedSize) {
-      alert("Пожалуйста, выберите размер");
-      return;
-    }
-    onAddToCart(product, selectedSize);
-  };
+    const tgInitData = window.Telegram?.WebApp?.initData || '';
 
-  return (
-    <div className="fixed inset-0 z-[60] bg-black text-white flex flex-col animate-fade-in">
-      
-      <button 
-        onClick={onBack}
-        className="absolute top-24 left-4 z-[100] bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 active:scale-95 transition-all"
-      >
-        <ArrowLeft size={24} />
-      </button>
+    const sizes = product.sizes ? product.sizes.split(',') : ['S', 'M', 'L'];
+    const images = product.image_url ? product.image_url.split(',') : [];
 
-      <div className="flex-1 overflow-y-auto relative no-scrollbar">
+    const getImgUrl = (url) => {
+        if (!url) return null;
+        return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
+    };
+
+    const handleAddToCartClick = () => {
+        if (!selectedSize) {
+            alert("Пожалуйста, выберите размер");
+            return;
+        }
+        onAddToCart(product, selectedSize);
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 2000);
+    };
+
+    // --- ЛОГИКА ПРИМЕРОЧНОЙ ---
+
+    const openTryOnModal = async () => {
+        setIsTryOnModalOpen(true);
+        setUserPhoto(null);
+        setTryonResult(null);
+        setTryonError(null);
         
-        <div className="w-full h-[55vh] relative bg-[#111]">
-          {/* Если есть скидка — вешаем красный бейдж прямо на фото */}
-          {product.old_price && (
-              <div className="absolute top-24 right-4 z-20 bg-red-500 text-white text-xs font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
-                  Sale
-              </div>
-          )}
-          <ImageSlider imagesStr={product.image_url} />
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none" />
-        </div>
+        // Запрашиваем лимиты
+        try {
+            const res = await fetch(`${API_URL}/try-on/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ initData: tgInitData })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setTryonStatus(data);
+            }
+        } catch (e) { console.error("Ошибка загрузки лимитов:", e); }
+    };
 
-        <div className="px-6 -mt-8 relative z-10">
-          <div className="flex justify-between items-start mb-4">
-            <h1 className="text-3xl font-black uppercase leading-tight max-w-[65%]">
-              {product.name}
-            </h1>
+    const handlePhotoUpload = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setUserPhoto(e.target.files[0]);
+        }
+    };
+
+    const handleGenerateTryOn = async () => {
+        if (!userPhoto) return;
+        
+        setIsGenerating(true);
+        setTryonError(null);
+
+        const formData = new FormData();
+        formData.append('initData', tgInitData);
+        formData.append('product_id', product.id);
+        formData.append('file', userPhoto);
+
+        try {
+            const res = await fetch(`${API_URL}/try-on/generate`, {
+                method: 'POST',
+                body: formData
+            });
             
-            {/* 🔥 ОБНОВЛЕНО: Блок цены со скидкой */}
-            <div className="text-right">
-              {product.old_price && (
-                  <div className="text-sm font-mono text-gray-500 line-through leading-none mb-1">
-                      {product.old_price} ₽
-                  </div>
-              )}
-              <div className={`text-2xl font-mono font-bold leading-none ${product.old_price ? 'text-red-500' : 'text-white'}`}>
-                {product.price} ₽
-              </div>
+            const data = await res.json();
+            
+            if (res.ok) {
+                setTryonResult(data.result_url);
+                // Обновляем лимиты после успешной генерации
+                setTryonStatus(prev => ({...prev, remaining: prev.remaining - 1}));
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                }
+            } else {
+                setTryonError(data.detail || "Произошла ошибка при генерации");
+            }
+        } catch (e) {
+            setTryonError("Ошибка сети. Попробуйте еще раз.");
+        }
+        
+        setIsGenerating(false);
+    };
+
+    const handleDownload = () => {
+        if (!tryonResult) return;
+        // Создаем временную ссылку для скачивания
+        const link = document.createElement('a');
+        link.href = tryonResult;
+        link.download = `firma_tryon_${product.id}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    return (
+        <div className="bg-black min-h-screen text-white animate-slide-up pb-24">
+            
+            {/* ШАПКА ТОВАРА */}
+            <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center max-w-md mx-auto pointer-events-none">
+                <button onClick={onBack} className="w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 pointer-events-auto active:scale-90 transition-all">
+                    <ArrowLeft size={20} />
+                </button>
             </div>
 
-          </div>
-
-          <div className="flex gap-2 mb-6">
-             <span className="px-3 py-1 border border-white/20 text-[10px] font-bold uppercase tracking-widest rounded-full">
-               {product.brand ? product.brand.name : 'Firma'}
-             </span>
-             {product.category && (
-               <span className="px-3 py-1 bg-white/10 text-[10px] font-bold uppercase tracking-widest rounded-full text-gray-300">
-                 {product.category}
-               </span>
-             )}
-          </div>
-
-          {sizes.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Выберите размер</h3>
-              <div className="flex flex-wrap gap-3">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-w-[50px] h-12 rounded-lg border flex items-center justify-center font-bold text-sm transition-all ${
-                      selectedSize === size 
-                        ? 'bg-white text-black border-white scale-105' 
-                        : 'bg-transparent text-gray-400 border-white/20 hover:border-white/50'
-                    }`}
-                  >
-                    {size}
-                  </button>
+            {/* ГАЛЕРЕЯ */}
+            <div className="w-full aspect-[4/5] bg-[#111] relative overflow-x-auto snap-x snap-mandatory flex no-scrollbar">
+                {images.map((img, idx) => (
+                    <img key={idx} src={getImgUrl(img)} className="w-full h-full object-cover shrink-0 snap-center" alt={`Slide ${idx}`}/>
                 ))}
-              </div>
+                {images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                        {images.map((_, idx) => (
+                            <div key={idx} className="w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
+                        ))}
+                    </div>
+                )}
             </div>
-          )}
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Описание</h3>
-            <p className="text-sm text-gray-300 leading-relaxed font-light whitespace-pre-wrap">
-              {product.description || "Описание отсутствует."}
-            </p>
-          </div>
+            {/* ИНФО О ТОВАРЕ */}
+            <div className="p-4 relative">
+                <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{product.brand ? product.brand.name : 'FIRMA ARCHIVE'}</p>
+                        <h1 className="text-2xl font-black uppercase tracking-tighter leading-none">{product.name}</h1>
+                    </div>
+                    <div className="text-right">
+                        {product.old_price && <div className="text-[10px] text-gray-500 line-through">{product.old_price} ₽</div>}
+                        <div className="text-xl font-mono font-bold">{product.price} ₽</div>
+                    </div>
+                </div>
 
-          <div className="h-48 w-full shrink-0"></div>
+                <p className="text-xs text-gray-400 font-mono leading-relaxed mt-4 whitespace-pre-line">
+                    {product.description || "Классический силуэт, переосмысленный в рамках архивной коллекции."}
+                </p>
+
+                {/* ВЫБОР РАЗМЕРА */}
+                <div className="mt-8">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Размер</span>
+                    </div>
+                    <div className="flex gap-2">
+                        {sizes.map(size => (
+                            <button 
+                                key={size}
+                                onClick={() => setSelectedSize(size)}
+                                className={`flex-1 py-3 rounded-xl border font-mono text-sm uppercase transition-all active:scale-95 ${
+                                    selectedSize === size 
+                                    ? 'bg-white text-black border-white font-bold' 
+                                    : 'bg-[#111] text-white border-white/10 hover:border-white/30'
+                                }`}
+                            >
+                                {size.trim()}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ПЛАВАЮЩИЕ КНОПКИ ВНИЗУ */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/90 to-transparent max-w-md mx-auto z-40">
+                <div className="flex flex-col gap-2">
+                    
+                    {/* 🔥 КНОПКА ВИРТУАЛЬНОЙ ПРИМЕРКИ */}
+                    <button 
+                        onClick={openTryOnModal}
+                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] border border-purple-500/50"
+                    >
+                        <Sparkles size={16} />
+                        Примерить с ИИ
+                    </button>
+
+                    {/* КНОПКА КУПИТЬ */}
+                    <button 
+                        onClick={handleAddToCartClick}
+                        className={`w-full font-bold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                            isAdded ? 'bg-green-500 text-white' : 'bg-white text-black'
+                        }`}
+                    >
+                        {isAdded ? <><Heart size={18} className="fill-white"/> Добавлено</> : <><ShoppingBag size={18}/> В корзину</>}
+                    </button>
+                </div>
+            </div>
+
+            {/* 🔥 МОДАЛЬНОЕ ОКНО ПРИМЕРОЧНОЙ */}
+            {isTryOnModalOpen && (
+                <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
+                    
+                    <button onClick={() => setIsTryOnModalOpen(false)} className="absolute top-10 right-6 p-2 bg-white/10 rounded-full text-white">
+                        <X size={20} />
+                    </button>
+
+                    <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center">
+                        
+                        {/* Индикатор лимитов */}
+                        {tryonStatus && (
+                            <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
+                                Доступно примерок: <span className="text-white font-bold">{tryonStatus.remaining} из {tryonStatus.total_limit}</span>
+                            </div>
+                        )}
+
+                        <div className="mt-8 mb-6 flex flex-col items-center">
+                            <Sparkles size={32} className="text-purple-500 mb-2" />
+                            <h2 className="text-xl font-black uppercase tracking-tighter">AI Fitting Room</h2>
+                            <p className="text-[10px] text-gray-500 text-center mt-2 font-mono px-4">
+                                Загрузи свое фото прямо, в полный рост или по пояс, при хорошем освещении.
+                            </p>
+                        </div>
+
+                        {/* Если нет лимитов */}
+                        {tryonStatus?.remaining === 0 ? (
+                            <div className="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center mb-4">
+                                <AlertCircle size={24} className="text-red-500 mx-auto mb-2" />
+                                <p className="text-xs font-bold text-white mb-1">Лимиты исчерпаны</p>
+                                <p className="text-[10px] text-gray-400 font-mono">Вы потратили все примерки на сегодня. Возвращайтесь завтра!</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Блок загрузки и генерации */}
+                                {!tryonResult && !isGenerating && (
+                                    <div 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-full aspect-[3/4] bg-black border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center cursor-pointer relative overflow-hidden mb-6 group"
+                                    >
+                                        {userPhoto ? (
+                                            <>
+                                                <img src={URL.createObjectURL(userPhoto)} className="w-full h-full object-cover opacity-50" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="bg-white text-black px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider shadow-xl">Изменить фото</div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                                    <Camera size={24} className="text-gray-400" />
+                                                </div>
+                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Выбрать фото</span>
+                                            </>
+                                        )}
+                                        <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+                                    </div>
+                                )}
+
+                                {/* Экран ожидания (Анимация генерации) */}
+                                {isGenerating && (
+                                    <div className="w-full aspect-[3/4] bg-black border border-purple-500/30 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden mb-6 shadow-[0_0_30px_rgba(147,51,234,0.1)]">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent animate-pulse"></div>
+                                        <Loader size={40} className="text-purple-500 animate-spin mb-4" />
+                                        <p className="text-xs font-bold text-white uppercase tracking-widest animate-pulse">ИИ создает лук...</p>
+                                        <p className="text-[9px] text-gray-500 font-mono mt-2">Это займет 10-20 секунд</p>
+                                    </div>
+                                )}
+
+                                {/* Результат */}
+                                {tryonResult && (
+                                    <div className="w-full aspect-[3/4] relative rounded-2xl overflow-hidden mb-6 border border-white/10">
+                                        <img src={tryonResult} className="w-full h-full object-cover" />
+                                        <button 
+                                            onClick={handleDownload}
+                                            className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white hover:text-black transition-all"
+                                        >
+                                            <Download size={18} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Ошибки */}
+                                {tryonError && (
+                                    <p className="text-xs text-red-500 font-mono text-center mb-4">{tryonError}</p>
+                                )}
+
+                                {/* Кнопки управления */}
+                                {!tryonResult ? (
+                                    <button 
+                                        onClick={handleGenerateTryOn}
+                                        disabled={!userPhoto || isGenerating}
+                                        className={`w-full font-bold py-4 rounded-xl uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${
+                                            userPhoto && !isGenerating ? 'bg-white text-black hover:scale-[0.98]' : 'bg-white/10 text-gray-500'
+                                        }`}
+                                    >
+                                        {isGenerating ? 'Обработка...' : 'Надеть вещь'}
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={() => {
+                                            setIsTryOnModalOpen(false);
+                                            handleAddToCartClick();
+                                        }}
+                                        className="w-full bg-white text-black font-bold py-4 rounded-xl uppercase tracking-widest text-xs flex items-center justify-center transition-all hover:scale-[0.98]"
+                                    >
+                                        Добавить в корзину
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
         </div>
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 p-6 pt-24 bg-gradient-to-t from-black via-black to-transparent z-[80] pointer-events-none flex flex-col justify-end">
-        <button 
-          onClick={handleAddToCart}
-          disabled={sizes.length > 0 && !selectedSize} 
-          className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all pointer-events-auto shadow-2xl ${
-            sizes.length > 0 && !selectedSize 
-              ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
-              : 'bg-white text-black'
-          }`}
-        >
-          {sizes.length > 0 && !selectedSize ? <AlertCircle size={20}/> : <ShoppingBag size={20} />}
-          <span className="uppercase tracking-wider text-sm">
-            {sizes.length > 0 && !selectedSize ? 'Выберите размер' : 'В корзину'}
-          </span>
-        </button>
-      </div>
-      
-    </div>
-  );
+    );
 };
 
 export default ProductDetail;
