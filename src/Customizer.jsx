@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import { Type, Image as ImageIcon, X, Trash2, Save, Plus, Minus, Check } from 'lucide-react';
+import { Type, Image as ImageIcon, X, Trash2, Save, Plus, Minus, Check, Loader } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
@@ -10,25 +10,37 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
     const [activeId, setActiveId] = useState(null); 
     const canvasRef = useRef(null);
     
-    // 🔥 Стейт для безопасной картинки
-    const [safeBg, setSafeBg] = useState(bgImage);
+    // Стейты для безопасного фона
+    const [safeBg, setSafeBg] = useState(null);
+    const [isBgLoaded, setIsBgLoaded] = useState(false);
 
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
-    // 🔥 Превращаем фон в Base64, чтобы обойти жесткие блокировки Safari/Telegram
+    // 🔥 АБСОЛЮТНАЯ ЗАЩИТА ОТ CORS И БЛОКИРОВОК SAFARI
     useEffect(() => {
         const fetchBg = async () => {
             try {
-                const res = await fetch(bgImage);
+                // Пропускаем картинку через открытый прокси, чтобы стереть чужие заголовки
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(bgImage)}`;
+                const res = await fetch(proxyUrl);
+                
+                if (!res.ok) throw new Error("Proxy error");
+                
                 const blob = await res.blob();
                 const reader = new FileReader();
-                reader.onloadend = () => setSafeBg(reader.result);
+                reader.onloadend = () => {
+                    setSafeBg(reader.result); // Сохраняем как безопасный Base64 текст
+                    setIsBgLoaded(true);
+                };
                 reader.readAsDataURL(blob);
             } catch (e) {
-                console.error("Failed to convert bg to base64", e);
+                console.error("CORS Proxy failed", e);
+                // Запасной план: вставляем как есть
+                setSafeBg(bgImage); 
+                setIsBgLoaded(true);
             }
         };
-        if (bgImage && bgImage.startsWith('http')) fetchBg();
+        if (bgImage) fetchBg();
     }, [bgImage]);
 
     // Добавление текста
@@ -114,17 +126,17 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         setIsSaving(true);
         
         try {
+            // Ждем, пока исчезнет рамка выделения
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // 🔥 Убрали allowTaint: true, теперь браузер не будет ругаться!
             const canvas = await html2canvas(canvasRef.current, {
                 backgroundColor: '#0a0a0a',
-                useCORS: true,      
-                scale: 2
+                useCORS: true,
+                scale: 2 // Высокое качество
             });
 
             canvas.toBlob(async (blob) => {
-                if (!blob) throw new Error("Не удалось создать файл");
+                if (!blob) throw new Error("Система заблокировала создание картинки");
                 
                 const formData = new FormData();
                 formData.append('initData', tgInitData);
@@ -139,14 +151,15 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                     const data = await res.json();
                     onSave(data.url); 
                 } else {
-                    alert("Ошибка сохранения на сервере");
+                    alert("Ошибка отправки на сервер. Попробуйте еще раз.");
                     setIsSaving(false);
                 }
             }, 'image/png');
 
         } catch (error) {
             console.error("Canvas error:", error);
-            alert(`Ошибка: ${error.message}`);
+            // 🔥 Понятный вывод ошибки вместо "undefined"
+            alert(`Сбой сохранения: ${error?.message || error || 'Неизвестная ошибка iOS'}`);
             setIsSaving(false);
         }
     };
@@ -158,7 +171,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
             <div className="flex justify-between items-center p-4 bg-black/90 backdrop-blur border-b border-white/10 shrink-0">
                 <button onClick={onClose} className="p-2 bg-white/10 rounded-full"><X size={20} /></button>
                 <div className="font-black tracking-widest uppercase text-sm">Свой Дизайн</div>
-                <button onClick={handleSave} disabled={isSaving || elements.length === 0} className={`p-2 rounded-full ${elements.length > 0 ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-500'}`}>
+                <button onClick={handleSave} disabled={isSaving || elements.length === 0 || !isBgLoaded} className={`p-2 rounded-full ${elements.length > 0 ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-500'}`}>
                     {isSaving ? <Loader size={20} className="animate-spin"/> : <Save size={20} />}
                 </button>
             </div>
@@ -169,8 +182,16 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                 onClick={() => setActiveId(null)} 
             >
                 <div ref={canvasRef} className="relative w-full max-w-[350px] aspect-[4/5] bg-[#0a0a0a]">
-                    {/* 🔥 Используем safeBg */}
-                    <img src={safeBg} alt="product" crossOrigin="anonymous" className="w-full h-full object-cover opacity-80" />
+                    
+                    {/* Фон с лоадером */}
+                    {!isBgLoaded ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-3">
+                            <Loader size={24} className="animate-spin text-purple-500" />
+                            <span className="text-[10px] uppercase tracking-widest font-mono">Загрузка холста...</span>
+                        </div>
+                    ) : (
+                        <img src={safeBg} alt="product" className="w-full h-full object-cover opacity-80" />
+                    )}
                     
                     {/* Границы печати */}
                     <div className="absolute top-[20%] bottom-[20%] left-[20%] right-[20%] border border-dashed border-white/20 pointer-events-none rounded-xl">
