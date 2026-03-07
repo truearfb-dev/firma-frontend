@@ -1,60 +1,74 @@
 import React, { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { Type, Image as ImageIcon, X, Trash2, Save, Move } from 'lucide-react';
+import { Type, Image as ImageIcon, X, Trash2, Save, Plus, Minus, Check } from 'lucide-react';
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
 const Customizer = ({ bgImage, onClose, onSave }) => {
     const [elements, setElements] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [activeId, setActiveId] = useState(null); // Выбранный элемент
     const canvasRef = useRef(null);
 
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
     // Добавление текста
     const addText = () => {
-        setElements([...elements, {
-            id: Date.now(),
-            type: 'text',
-            content: 'ВАШ ТЕКСТ',
-            x: 50,
-            y: 50,
-            color: '#ffffff',
-            size: 20
-        }]);
+        const id = Date.now();
+        setElements([...elements, { id, type: 'text', content: 'ТЕКСТ', x: 100, y: 150, color: '#ffffff', size: 24 }]);
+        setActiveId(id);
     };
 
-    // Добавление картинки
+    // Добавление картинки (сразу конвертируем в Base64 для защиты от CORS)
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const url = URL.createObjectURL(file);
-            setElements([...elements, {
-                id: Date.now(),
-                type: 'image',
-                content: url,
-                x: 50,
-                y: 50,
-                width: 100
-            }]);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const id = Date.now();
+                setElements([...elements, { id, type: 'image', content: reader.result, x: 100, y: 150, size: 100 }]);
+                setActiveId(id);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
-    // Удаление элемента
+    // Удаление
     const removeElement = (id) => {
         setElements(elements.filter(el => el.id !== id));
+        if (activeId === id) setActiveId(null);
     };
 
-    // Простая физика перетаскивания (Drag and Drop) для мобилок
+    // Изменение размера
+    const updateSize = (delta) => {
+        if (!activeId) return;
+        setElements(elements.map(el => {
+            if (el.id === activeId) {
+                // Для текста минимальный размер 12, для картинки 30
+                const minSize = el.type === 'text' ? 12 : 30;
+                return { ...el, size: Math.max(minSize, el.size + delta) };
+            }
+            return el;
+        }));
+    };
+
+    // Обновление текста
+    const updateText = (e, id) => {
+        setElements(elements.map(el => el.id === id ? { ...el, content: e.target.value } : el));
+    };
+
+    // Улучшенная физика перемещения
     const handleTouchStart = (e, id) => {
-        const touch = e.touches[0];
-        const el = elements.find(e => e.id === id);
+        e.stopPropagation();
+        setActiveId(id);
+        const touch = e.touches ? e.touches[0] : e;
+        const el = elements.find(item => item.id === id);
         
         const startX = touch.clientX - el.x;
         const startY = touch.clientY - el.y;
 
-        const handleTouchMove = (moveEvent) => {
-            const moveTouch = moveEvent.touches[0];
+        const handleMove = (moveEvent) => {
+            const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
             setElements(prev => prev.map(item => {
                 if (item.id === id) {
                     return { ...item, x: moveTouch.clientX - startX, y: moveTouch.clientY - startY };
@@ -63,33 +77,42 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
             }));
         };
 
-        const handleTouchEnd = () => {
-            document.removeElementEventListener('touchmove', handleTouchMove);
-            document.removeElementEventListener('touchend', handleTouchEnd);
+        const handleEnd = () => {
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleEnd);
         };
 
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
     };
 
     // Сохранение (Скриншот)
     const handleSave = async () => {
+        setActiveId(null); // Снимаем выделение, чтобы рамки не попали на скриншот
         setIsSaving(true);
+        
         try {
-            // Делаем скриншот области
+            // Ждем долю секунды, чтобы рамка выделения успела исчезнуть
+            await new Promise(resolve => setTimeout(resolve, 150));
+
             const canvas = await html2canvas(canvasRef.current, {
-                backgroundColor: null,
-                useCORS: true,
-                scale: 2 // Для хорошего качества
+                backgroundColor: '#000000',
+                useCORS: true,      // Разрешаем CORS
+                allowTaint: true,   // Обходим блокировку
+                scale: 2
             });
 
-            // Превращаем скриншот в файл
             canvas.toBlob(async (blob) => {
+                if (!blob) throw new Error("Не удалось создать картинку");
+                
                 const formData = new FormData();
                 formData.append('initData', tgInitData);
                 formData.append('file', blob, `custom_${Date.now()}.png`);
 
-                // Отправляем на бэкенд
                 const res = await fetch(`${API_URL}/custom-design/upload`, {
                     method: 'POST',
                     body: formData
@@ -97,94 +120,109 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
 
                 if (res.ok) {
                     const data = await res.json();
-                    onSave(data.url); // Возвращаем ссылку в ProductDetail
+                    onSave(data.url); 
                 } else {
-                    alert("Ошибка сохранения макета");
+                    alert("Ошибка сохранения на сервере");
+                    setIsSaving(false);
                 }
-                setIsSaving(false);
             }, 'image/png');
 
         } catch (error) {
             console.error("Canvas error:", error);
+            alert("Ошибка создания макета. Попробуйте еще раз.");
             setIsSaving(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[120] bg-black flex flex-col animate-fade-in">
+        <div className="fixed inset-0 z-[120] bg-black flex flex-col animate-fade-in touch-none">
             
-            {/* Шапка редактора */}
-            <div className="flex justify-between items-center p-4 bg-black/90 backdrop-blur border-b border-white/10">
+            {/* Шапка */}
+            <div className="flex justify-between items-center p-4 bg-black/90 backdrop-blur border-b border-white/10 shrink-0">
                 <button onClick={onClose} className="p-2 bg-white/10 rounded-full"><X size={20} /></button>
                 <div className="font-black tracking-widest uppercase text-sm">Свой Дизайн</div>
-                <button onClick={handleSave} disabled={isSaving || elements.length === 0} className={`p-2 rounded-full ${elements.length > 0 ? 'bg-purple-600' : 'bg-white/10'}`}>
+                <button onClick={handleSave} disabled={isSaving || elements.length === 0} className={`p-2 rounded-full ${elements.length > 0 ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-500'}`}>
                     {isSaving ? <Loader size={20} className="animate-spin"/> : <Save size={20} />}
                 </button>
             </div>
 
-            {/* Зона Холста (Canvas) */}
-            <div className="flex-1 relative bg-[#111] overflow-hidden flex items-center justify-center">
-                <div ref={canvasRef} className="relative w-full max-w-[350px] aspect-[4/5] bg-black">
-                    <img src={bgImage} alt="base" className="w-full h-full object-cover opacity-80" crossOrigin="anonymous"/>
+            {/* Холст */}
+            <div 
+                className="flex-1 relative bg-[#111] overflow-hidden flex items-center justify-center"
+                onClick={() => setActiveId(null)} // Клик по фону снимает выделение
+            >
+                <div ref={canvasRef} className="relative w-full max-w-[350px] aspect-[4/5] bg-[#0a0a0a]">
+                    {/* Фон (Футболка). Убрали crossOrigin, чтобы не блокировалось */}
+                    <img src={bgImage} alt="product" className="w-full h-full object-cover opacity-80" />
                     
-                    {/* Границы печати (пунктир) */}
-                    <div className="absolute top-[20%] bottom-[20%] left-[20%] right-[20%] border-2 border-dashed border-white/20 pointer-events-none rounded-xl">
-                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-mono text-white/50 tracking-widest uppercase">Зона печати</span>
+                    {/* Границы печати */}
+                    <div className="absolute top-[20%] bottom-[20%] left-[20%] right-[20%] border border-dashed border-white/20 pointer-events-none rounded-xl">
+                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-mono text-white/30 tracking-widest uppercase whitespace-nowrap">Зона печати</span>
                     </div>
 
-                    {/* Элементы дизайна */}
-                    {elements.map(el => (
-                        <div 
-                            key={el.id}
-                            className="absolute z-10 group"
-                            style={{ left: `${el.x}px`, top: `${el.y}px` }}
-                        >
-                            {/* Кнопка удаления (видна при клике) */}
-                            <button onClick={() => removeElement(el.id)} className="absolute -top-3 -right-3 bg-red-500 rounded-full p-1 opacity-0 group-active:opacity-100 transition-opacity">
-                                <Trash2 size={12}/>
-                            </button>
-
-                            {/* Ручка для перемещения */}
+                    {/* Элементы */}
+                    {elements.map(el => {
+                        const isActive = activeId === el.id;
+                        return (
                             <div 
+                                key={el.id}
+                                className={`absolute z-10 cursor-move ${isActive ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-black rounded-sm' : ''}`}
+                                style={{ left: `${el.x}px`, top: `${el.y}px`, transform: 'translate(-50%, -50%)' }} // Центрируем элемент по оси X и Y
                                 onTouchStart={(e) => handleTouchStart(e, el.id)}
-                                className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black rounded-full p-1 opacity-0 group-active:opacity-100"
+                                onMouseDown={(e) => handleTouchStart(e, el.id)}
                             >
-                                <Move size={12}/>
+                                {el.type === 'text' ? (
+                                    <input 
+                                        type="text" 
+                                        value={el.content}
+                                        onChange={(e) => updateText(e, el.id)}
+                                        className="bg-transparent border-none outline-none font-black text-center whitespace-nowrap p-0 m-0 w-auto"
+                                        style={{ color: el.color, fontSize: `${el.size}px` }}
+                                        readOnly={!isActive} // Можно редактировать текст только когда элемент активен
+                                    />
+                                ) : (
+                                    <img src={el.content} alt="sticker" style={{ width: `${el.size}px`, height: 'auto' }} className="pointer-events-none block"/>
+                                )}
                             </div>
-
-                            {el.type === 'text' ? (
-                                <input 
-                                    type="text" 
-                                    value={el.content}
-                                    onChange={(e) => setElements(elements.map(item => item.id === el.id ? {...item, content: e.target.value} : item))}
-                                    className="bg-transparent border-none outline-none font-black text-center whitespace-nowrap p-0 m-0"
-                                    style={{ color: el.color, fontSize: `${el.size}px` }}
-                                />
-                            ) : (
-                                <img src={el.content} alt="sticker" style={{ width: `${el.width}px` }} className="pointer-events-none"/>
-                            )}
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
 
-            {/* Панель инструментов (Тулбар) */}
-            <div className="p-4 bg-black border-t border-white/10 pb-10">
-                <div className="flex gap-2">
-                    <button onClick={addText} className="flex-1 bg-[#111] border border-white/10 py-4 rounded-xl flex flex-col items-center gap-2 active:bg-white/5 transition-all">
-                        <Type size={20} className="text-white"/>
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Текст</span>
-                    </button>
-                    
-                    <label className="flex-1 bg-[#111] border border-white/10 py-4 rounded-xl flex flex-col items-center gap-2 active:bg-white/5 transition-all cursor-pointer">
-                        <ImageIcon size={20} className="text-white"/>
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Стикер</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
-                    </label>
-                </div>
-                <p className="text-[9px] text-gray-500 font-mono text-center mt-4">
-                    Перетаскивай элементы пальцем. Нажми, чтобы удалить.
-                </p>
+            {/* Нижняя панель управления */}
+            <div className="bg-black border-t border-white/10 shrink-0 pb-8 pt-4 px-4 h-[120px] flex items-center justify-center">
+                {activeId ? (
+                    // Режим редактирования выбранного элемента
+                    <div className="flex w-full items-center justify-between gap-4 animate-slide-up">
+                        <button onClick={() => removeElement(activeId)} className="w-12 h-12 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-all border border-red-500/20">
+                            <Trash2 size={20}/>
+                        </button>
+                        
+                        <div className="flex flex-1 items-center justify-center gap-4 bg-[#111] rounded-xl border border-white/10 h-12">
+                            <button onClick={() => updateSize(-10)} className="w-12 h-full flex items-center justify-center active:bg-white/10 rounded-l-xl"><Minus size={18}/></button>
+                            <span className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">Размер</span>
+                            <button onClick={() => updateSize(10)} className="w-12 h-full flex items-center justify-center active:bg-white/10 rounded-r-xl"><Plus size={18}/></button>
+                        </div>
+
+                        <button onClick={() => setActiveId(null)} className="w-12 h-12 bg-white text-black rounded-xl flex items-center justify-center active:scale-90 transition-all font-bold">
+                            <Check size={20}/>
+                        </button>
+                    </div>
+                ) : (
+                    // Режим добавления новых элементов
+                    <div className="flex gap-3 w-full animate-fade-in">
+                        <button onClick={addText} className="flex-1 bg-[#111] border border-white/10 h-14 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all">
+                            <Type size={16} className="text-white"/>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Текст</span>
+                        </button>
+                        
+                        <label className="flex-1 bg-[#111] border border-white/10 h-14 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer">
+                            <ImageIcon size={16} className="text-white"/>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Стикер</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
+                        </label>
+                    </div>
+                )}
             </div>
 
         </div>
