@@ -146,8 +146,9 @@ function App() {
     }
   };
 
-  const handleAddToCart = (product, size) => {
-    const itemToAdd = { ...product, selectedSize: size };
+  // 🔥 ОБНОВЛЕНО: Добавлен третий параметр (customDesignUrl)
+  const handleAddToCart = (product, size, customDesignUrl = null) => {
+    const itemToAdd = { ...product, selectedSize: size, customDesignUrl };
     setCart([...cart, itemToAdd]); 
     setSelectedProduct(null); 
     if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -157,10 +158,15 @@ function App() {
     setCart(cart.filter((_, index) => index !== indexToRemove));
   }
 
+  // 🔥 ОБНОВЛЕНО: Передача custom_design_url на сервер
   const handleCheckout = async () => {
     if (!user || !initData) { alert("Ошибка: Нет авторизации"); return; }
     
-    const orderItems = cart.map(item => ({ product_id: item.id, size: item.selectedSize || null }));
+    const orderItems = cart.map(item => ({ 
+        product_id: item.id, 
+        size: item.selectedSize || null,
+        custom_design_url: item.customDesignUrl || null // Отправляем макет, если он есть
+    }));
 
     try {
         const response = await fetch(`${API_URL}/orders`, {
