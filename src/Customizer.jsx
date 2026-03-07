@@ -10,34 +10,46 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
     const [activeId, setActiveId] = useState(null); 
     const canvasRef = useRef(null);
     
-    // Стейты для безопасного фона
     const [safeBg, setSafeBg] = useState(null);
     const [isBgLoaded, setIsBgLoaded] = useState(false);
 
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
-    // 🔥 АБСОЛЮТНАЯ ЗАЩИТА ОТ CORS И БЛОКИРОВОК SAFARI
+    // 🔥 БЫСТРЫЙ И БЕЗОПАСНЫЙ ЗАГРУЗЧИК ФОНА
     useEffect(() => {
         const fetchBg = async () => {
             try {
-                // Пропускаем картинку через открытый прокси, чтобы стереть чужие заголовки
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(bgImage)}`;
-                const res = await fetch(proxyUrl);
+                // 1. Пытаемся скачать напрямую, обманывая кэш Safari меткой времени
+                const nocacheUrl = bgImage + (bgImage.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
                 
-                if (!res.ok) throw new Error("Proxy error");
-                
+                const res = await fetch(nocacheUrl);
+                if (!res.ok) throw new Error("Direct fetch failed");
+
                 const blob = await res.blob();
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setSafeBg(reader.result); // Сохраняем как безопасный Base64 текст
+                    setSafeBg(reader.result); // Сохраняем как мгновенный Base64
                     setIsBgLoaded(true);
                 };
                 reader.readAsDataURL(blob);
             } catch (e) {
-                console.error("CORS Proxy failed", e);
-                // Запасной план: вставляем как есть
-                setSafeBg(bgImage); 
-                setIsBgLoaded(true);
+                console.error("Direct fetch error, using fast proxy...", e);
+                // 2. Если упало (например, сервер отбил CORS), используем БЫСТРЫЙ прокси (1 сек вместо 40)
+                try {
+                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(bgImage)}`;
+                    const resProxy = await fetch(proxyUrl);
+                    const blobProxy = await resProxy.blob();
+                    const readerProxy = new FileReader();
+                    readerProxy.onloadend = () => {
+                        setSafeBg(readerProxy.result);
+                        setIsBgLoaded(true);
+                    };
+                    readerProxy.readAsDataURL(blobProxy);
+                } catch (err) {
+                    console.error("All fetches failed. Fallback to raw URL.");
+                    setSafeBg(bgImage);
+                    setIsBgLoaded(true);
+                }
             }
         };
         if (bgImage) fetchBg();
@@ -126,8 +138,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         setIsSaving(true);
         
         try {
-            // Ждем, пока исчезнет рамка выделения
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 200)); // Ждем исчезновения рамки
 
             const canvas = await html2canvas(canvasRef.current, {
                 backgroundColor: '#0a0a0a',
@@ -158,7 +169,6 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
 
         } catch (error) {
             console.error("Canvas error:", error);
-            // 🔥 Понятный вывод ошибки вместо "undefined"
             alert(`Сбой сохранения: ${error?.message || error || 'Неизвестная ошибка iOS'}`);
             setIsSaving(false);
         }
@@ -183,7 +193,6 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
             >
                 <div ref={canvasRef} className="relative w-full max-w-[350px] aspect-[4/5] bg-[#0a0a0a]">
                     
-                    {/* Фон с лоадером */}
                     {!isBgLoaded ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-3">
                             <Loader size={24} className="animate-spin text-purple-500" />
