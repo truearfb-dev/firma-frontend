@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { Type, Image as ImageIcon, X, Trash2, Save, Plus, Minus, Check } from 'lucide-react';
 
@@ -7,10 +7,29 @@ const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 const Customizer = ({ bgImage, onClose, onSave }) => {
     const [elements, setElements] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeId, setActiveId] = useState(null); // Выбранный элемент
+    const [activeId, setActiveId] = useState(null); 
     const canvasRef = useRef(null);
+    
+    // 🔥 Стейт для безопасной картинки
+    const [safeBg, setSafeBg] = useState(bgImage);
 
     const tgInitData = window.Telegram?.WebApp?.initData || '';
+
+    // 🔥 Превращаем фон в Base64, чтобы обойти жесткие блокировки Safari/Telegram
+    useEffect(() => {
+        const fetchBg = async () => {
+            try {
+                const res = await fetch(bgImage);
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setSafeBg(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (e) {
+                console.error("Failed to convert bg to base64", e);
+            }
+        };
+        if (bgImage && bgImage.startsWith('http')) fetchBg();
+    }, [bgImage]);
 
     // Добавление текста
     const addText = () => {
@@ -19,7 +38,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         setActiveId(id);
     };
 
-    // Добавление картинки (сразу конвертируем в Base64 для защиты от CORS)
+    // Добавление картинки 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -44,7 +63,6 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         if (!activeId) return;
         setElements(elements.map(el => {
             if (el.id === activeId) {
-                // Для текста минимальный размер 12, для картинки 30
                 const minSize = el.type === 'text' ? 12 : 30;
                 return { ...el, size: Math.max(minSize, el.size + delta) };
             }
@@ -57,7 +75,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         setElements(elements.map(el => el.id === id ? { ...el, content: e.target.value } : el));
     };
 
-    // Улучшенная физика перемещения
+    // Физика перемещения
     const handleTouchStart = (e, id) => {
         e.stopPropagation();
         setActiveId(id);
@@ -92,22 +110,21 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
 
     // Сохранение (Скриншот)
     const handleSave = async () => {
-        setActiveId(null); // Снимаем выделение, чтобы рамки не попали на скриншот
+        setActiveId(null); 
         setIsSaving(true);
         
         try {
-            // Ждем долю секунды, чтобы рамка выделения успела исчезнуть
-            await new Promise(resolve => setTimeout(resolve, 150));
+            await new Promise(resolve => setTimeout(resolve, 200));
 
+            // 🔥 Убрали allowTaint: true, теперь браузер не будет ругаться!
             const canvas = await html2canvas(canvasRef.current, {
-                backgroundColor: '#000000',
-                useCORS: true,      // Разрешаем CORS
-                allowTaint: true,   // Обходим блокировку
+                backgroundColor: '#0a0a0a',
+                useCORS: true,      
                 scale: 2
             });
 
             canvas.toBlob(async (blob) => {
-                if (!blob) throw new Error("Не удалось создать картинку");
+                if (!blob) throw new Error("Не удалось создать файл");
                 
                 const formData = new FormData();
                 formData.append('initData', tgInitData);
@@ -129,7 +146,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
 
         } catch (error) {
             console.error("Canvas error:", error);
-            alert("Ошибка создания макета. Попробуйте еще раз.");
+            alert(`Ошибка: ${error.message}`);
             setIsSaving(false);
         }
     };
@@ -149,11 +166,11 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
             {/* Холст */}
             <div 
                 className="flex-1 relative bg-[#111] overflow-hidden flex items-center justify-center"
-                onClick={() => setActiveId(null)} // Клик по фону снимает выделение
+                onClick={() => setActiveId(null)} 
             >
                 <div ref={canvasRef} className="relative w-full max-w-[350px] aspect-[4/5] bg-[#0a0a0a]">
-                    {/* Фон (Футболка). Убрали crossOrigin, чтобы не блокировалось */}
-                    <img src={bgImage} alt="product" className="w-full h-full object-cover opacity-80" />
+                    {/* 🔥 Используем safeBg */}
+                    <img src={safeBg} alt="product" crossOrigin="anonymous" className="w-full h-full object-cover opacity-80" />
                     
                     {/* Границы печати */}
                     <div className="absolute top-[20%] bottom-[20%] left-[20%] right-[20%] border border-dashed border-white/20 pointer-events-none rounded-xl">
@@ -167,7 +184,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                             <div 
                                 key={el.id}
                                 className={`absolute z-10 cursor-move ${isActive ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-black rounded-sm' : ''}`}
-                                style={{ left: `${el.x}px`, top: `${el.y}px`, transform: 'translate(-50%, -50%)' }} // Центрируем элемент по оси X и Y
+                                style={{ left: `${el.x}px`, top: `${el.y}px`, transform: 'translate(-50%, -50%)' }} 
                                 onTouchStart={(e) => handleTouchStart(e, el.id)}
                                 onMouseDown={(e) => handleTouchStart(e, el.id)}
                             >
@@ -178,7 +195,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                                         onChange={(e) => updateText(e, el.id)}
                                         className="bg-transparent border-none outline-none font-black text-center whitespace-nowrap p-0 m-0 w-auto"
                                         style={{ color: el.color, fontSize: `${el.size}px` }}
-                                        readOnly={!isActive} // Можно редактировать текст только когда элемент активен
+                                        readOnly={!isActive} 
                                     />
                                 ) : (
                                     <img src={el.content} alt="sticker" style={{ width: `${el.size}px`, height: 'auto' }} className="pointer-events-none block"/>
@@ -192,7 +209,6 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
             {/* Нижняя панель управления */}
             <div className="bg-black border-t border-white/10 shrink-0 pb-8 pt-4 px-4 h-[120px] flex items-center justify-center">
                 {activeId ? (
-                    // Режим редактирования выбранного элемента
                     <div className="flex w-full items-center justify-between gap-4 animate-slide-up">
                         <button onClick={() => removeElement(activeId)} className="w-12 h-12 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-all border border-red-500/20">
                             <Trash2 size={20}/>
@@ -209,7 +225,6 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                         </button>
                     </div>
                 ) : (
-                    // Режим добавления новых элементов
                     <div className="flex gap-3 w-full animate-fade-in">
                         <button onClick={addText} className="flex-1 bg-[#111] border border-white/10 h-14 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all">
                             <Type size={16} className="text-white"/>
