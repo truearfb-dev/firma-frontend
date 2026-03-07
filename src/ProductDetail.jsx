@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Heart, ShoppingBag, Loader, Camera, Download, Sparkles, X, AlertCircle, Send } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingBag, Loader, Camera, Download, Sparkles, X, AlertCircle, Send, Palette } from 'lucide-react';
+import Customizer from './Customizer'; // 🔥 Импортируем наш Конструктор
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 // 🔥 УКАЖИ ЗДЕСЬ ССЫЛКУ НА ТВОЙ КАНАЛ (куда пойдет человек при клике)
@@ -17,8 +18,11 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     const [tryonResult, setTryonResult] = useState(null);
     const [tryonError, setTryonError] = useState(null);
     
-    // 🔥 НОВЫЙ СТЕЙТ ДЛЯ ПРОВЕРКИ ПОДПИСКИ
+    // Стейт проверки подписки
     const [isVerifyingSub, setIsVerifyingSub] = useState(false);
+
+    // 🔥 Стейт Конструктора
+    const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
     
     const fileInputRef = useRef(null);
     const tgInitData = window.Telegram?.WebApp?.initData || '';
@@ -31,16 +35,34 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
     };
 
+    // Обычное добавление в корзину
     const handleAddToCartClick = () => {
         if (!selectedSize) {
             alert("Пожалуйста, выберите размер");
             return;
         }
-        onAddToCart(product, selectedSize);
+        onAddToCart(product, selectedSize); // Вызов без кастомного URL
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2000);
     };
 
+    // --- ЛОГИКА КОНСТРУКТОРА ---
+    const openCustomizer = () => {
+        if (!selectedSize) {
+            alert("Пожалуйста, выберите размер перед созданием дизайна");
+            return;
+        }
+        setIsCustomizerOpen(true);
+    };
+
+    const handleCustomDesignSave = (customUrl) => {
+        setIsCustomizerOpen(false);
+        onAddToCart(product, selectedSize, customUrl); // 🔥 Передаем макет в корзину!
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 2000);
+    };
+
+    // --- ЛОГИКА ПРИМЕРОЧНОЙ ---
     const fetchLimits = async () => {
         try {
             const res = await fetch(`${API_URL}/try-on/status`, {
@@ -92,7 +114,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         setIsGenerating(false);
     };
 
-    // 🔥 НОВАЯ ФУНКЦИЯ: Проверка подписки
     const handleVerifySubscription = async () => {
         setIsVerifyingSub(true);
         try {
@@ -105,7 +126,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             
             if (res.ok && data.status === 'success') {
                 if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                // Обновляем лимиты, чтобы открыть доступ
                 await fetchLimits();
             } else {
                 if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
@@ -128,7 +148,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     };
 
     return (
-        <div className="bg-black min-h-screen text-white animate-slide-up pb-24">
+        <div className="bg-black min-h-screen text-white animate-slide-up pb-32">
             
             {/* ШАПКА ТОВАРА */}
             <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center max-w-md mx-auto pointer-events-none">
@@ -194,13 +214,25 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             {/* ПЛАВАЮЩИЕ КНОПКИ ВНИЗУ */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/90 to-transparent max-w-md mx-auto z-40">
                 <div className="flex flex-col gap-2">
-                    <button 
-                        onClick={openTryOnModal}
-                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] border border-purple-500/50"
-                    >
-                        <Sparkles size={16} />
-                        Примерить с ИИ
-                    </button>
+                    {/* Ряд с доп. функциями */}
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={openTryOnModal}
+                            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] border border-purple-500/50"
+                        >
+                            <Sparkles size={14} />
+                            Примерить ИИ
+                        </button>
+
+                        <button 
+                            onClick={openCustomizer}
+                            className="flex-1 bg-[#111] border border-white/20 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all hover:bg-white/10"
+                        >
+                            <Palette size={14} />
+                            Свой дизайн
+                        </button>
+                    </div>
+
                     <button 
                         onClick={handleAddToCartClick}
                         className={`w-full font-bold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition-all ${
@@ -212,16 +244,23 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 </div>
             </div>
 
+            {/* 🔥 МОДАЛЬНОЕ ОКНО КОНСТРУКТОРА */}
+            {isCustomizerOpen && (
+                <Customizer 
+                    bgImage={getImgUrl(images[0])} // Передаем первое фото товара как фон
+                    onClose={() => setIsCustomizerOpen(false)}
+                    onSave={handleCustomDesignSave}
+                />
+            )}
+
             {/* МОДАЛЬНОЕ ОКНО ПРИМЕРОЧНОЙ */}
             {isTryOnModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
-                    
                     <button onClick={() => setIsTryOnModalOpen(false)} className="absolute top-10 right-6 p-2 bg-white/10 rounded-full text-white z-[101]">
                         <X size={20} />
                     </button>
 
                     <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center">
-                        
                         {tryonStatus && (
                             <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
                                 Доступно примерок: <span className="text-white font-bold">{tryonStatus.remaining} из {tryonStatus.total_limit}</span>
@@ -236,17 +275,15 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                             </p>
                         </div>
 
-                        {/* 🔥 РОУТИНГ СОСТОЯНИЙ ЛИМИТОВ */}
+                        {/* РОУТИНГ СОСТОЯНИЙ ЛИМИТОВ */}
                         {tryonStatus?.remaining === 0 ? (
                             tryonStatus?.is_subscribed ? (
-                                // 1. Хард-лимит (потратил все 8 из 8)
                                 <div className="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center mb-4 animate-scale-in">
                                     <AlertCircle size={24} className="text-red-500 mx-auto mb-2" />
                                     <p className="text-xs font-bold text-white mb-1">Лимиты исчерпаны</p>
                                     <p className="text-[10px] text-gray-400 font-mono">Вы потратили все {tryonStatus.total_limit} примерок на сегодня. Возвращайтесь завтра!</p>
                                 </div>
                             ) : (
-                                // 2. Софт-лимит (потратил 3 из 3, предлагаем подписку)
                                 <div className="w-full bg-blue-900/20 border border-blue-500/30 rounded-2xl p-5 text-center mb-2 animate-scale-in">
                                     <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-500/50">
                                         <Send size={20} className="text-blue-400 -ml-1" />
@@ -275,7 +312,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                                 </div>
                             )
                         ) : (
-                            // 3. Есть лимиты, показываем загрузку фото
                             <>
                                 {!tryonResult && !isGenerating && (
                                     <div 
@@ -301,7 +337,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                                     </div>
                                 )}
 
-                                {/* Экран ожидания */}
                                 {isGenerating && (
                                     <div className="w-full aspect-[3/4] bg-black border border-purple-500/30 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden mb-6 shadow-[0_0_30px_rgba(147,51,234,0.1)]">
                                         <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent animate-pulse"></div>
@@ -311,7 +346,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                                     </div>
                                 )}
 
-                                {/* Результат */}
                                 {tryonResult && (
                                     <div className="w-full aspect-[3/4] relative rounded-2xl overflow-hidden mb-6 border border-white/10 group">
                                         <img src={tryonResult} className="w-full h-full object-cover" />
@@ -324,12 +358,10 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                                     </div>
                                 )}
 
-                                {/* Ошибки */}
                                 {tryonError && (
                                     <p className="text-xs text-red-500 font-mono text-center mb-4">{tryonError}</p>
                                 )}
 
-                                {/* Кнопки управления генерацией */}
                                 {!tryonResult ? (
                                     <button 
                                         onClick={handleGenerateTryOn}
