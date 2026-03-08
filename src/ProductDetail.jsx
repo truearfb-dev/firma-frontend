@@ -34,6 +34,8 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
     const handleAddToCartClick = () => {
         if (!selectedSize) {
+            // 🔥 Небольшой UX-трюк: если размер не выбран, делаем легкую вибрацию ошибки
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
             alert("Пожалуйста, выберите размер");
             return;
         }
@@ -44,6 +46,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
     const openCustomizer = () => {
         if (!selectedSize) {
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
             alert("Пожалуйста, выберите размер перед созданием дизайна");
             return;
         }
@@ -142,92 +145,108 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     };
 
     return (
-        <div className="bg-black min-h-screen text-white animate-slide-up pb-32">
+        // 🔥 ИСПРАВЛЕНИЕ: Добавлен pt-24 (отступ сверху для шапки) и flex-структура
+        <div className="bg-black min-h-screen text-white animate-fade-in pt-24 pb-32 flex flex-col">
             
-            {/* ШАПКА ТОВАРА */}
-            <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center max-w-md mx-auto pointer-events-none">
-                <button onClick={onBack} className="w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 pointer-events-auto active:scale-90 transition-all">
-                    <ArrowLeft size={20} />
-                </button>
-            </div>
+            <div className="flex-1 overflow-y-auto px-4 no-scrollbar">
+                
+                {/* 🔥 ИСПРАВЛЕНИЕ: Галерея теперь в виде красивой карточки (rounded-3xl) с кнопкой внутри */}
+                <div className="w-full aspect-[4/5] bg-[#111] relative overflow-hidden rounded-3xl border border-white/10 mb-6 shadow-2xl">
+                    
+                    {/* Кнопка "Назад" интегрирована прямо в фото */}
+                    <button 
+                        onClick={onBack} 
+                        className="absolute top-4 left-4 z-20 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-all text-white hover:bg-white hover:text-black"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
 
-            {/* ГАЛЕРЕЯ */}
-            <div className="w-full aspect-[4/5] bg-[#111] relative overflow-x-auto snap-x snap-mandatory flex no-scrollbar">
-                {images.map((img, idx) => (
-                    <img 
-                        key={idx} 
-                        src={getImgUrl(img)} 
-                        onClick={() => setFullscreenImage(img)} 
-                        className="w-full h-full object-cover shrink-0 snap-center cursor-pointer" 
-                        alt={`Slide ${idx}`}
-                    />
-                ))}
-                {images.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
-                        {images.map((_, idx) => (
-                            <div key={idx} className="w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
+                    <div className="w-full h-full relative overflow-x-auto snap-x snap-mandatory flex no-scrollbar">
+                        {images.map((img, idx) => (
+                            <img 
+                                key={idx} 
+                                src={getImgUrl(img)} 
+                                onClick={() => setFullscreenImage(img)} 
+                                className="w-full h-full object-cover shrink-0 snap-center cursor-pointer" 
+                                alt={`Slide ${idx}`}
+                            />
                         ))}
                     </div>
-                )}
-            </div>
 
-            {/* ИНФО О ТОВАРЕ */}
-            <div className="p-4 relative">
-                <div className="flex justify-between items-start mb-2">
-                    <div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{product.brand ? product.brand.name : 'FIRMA ARCHIVE'}</p>
-                        <h1 className="text-2xl font-black uppercase tracking-tighter leading-none">{product.name}</h1>
-                    </div>
-                    <div className="text-right">
-                        {product.old_price && <div className="text-[10px] text-gray-500 line-through">{product.old_price} ₽</div>}
-                        <div className="text-xl font-mono font-bold">{product.price} ₽</div>
-                    </div>
+                    {/* Точки навигации галереи */}
+                    {images.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none z-10">
+                            {images.map((_, idx) => (
+                                <div key={idx} className="w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                <p className="text-xs text-gray-400 font-mono leading-relaxed mt-4 whitespace-pre-line">
-                    {product.description || "Классический силуэт, переосмысленный в рамках архивной коллекции."}
-                </p>
-
-                {/* ВЫБОР РАЗМЕРА */}
-                <div className="mt-8">
-                    <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Размер</span>
+                {/* ИНФО О ТОВАРЕ (Выровнено по краям) */}
+                <div className="px-2">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1 pr-4">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">
+                                {product.brand ? product.brand.name : 'FIRMA ARCHIVE'}
+                            </p>
+                            <h1 className="text-2xl font-black uppercase tracking-tighter leading-none break-words">
+                                {product.name}
+                            </h1>
+                        </div>
+                        <div className="text-right shrink-0">
+                            {product.old_price && <div className="text-[10px] text-gray-500 line-through">{product.old_price} ₽</div>}
+                            <div className="text-xl font-mono font-bold text-white">{product.price} ₽</div>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        {sizes.map(size => (
-                            <button 
-                                key={size}
-                                onClick={() => setSelectedSize(size)}
-                                className={`flex-1 py-3 rounded-xl border font-mono text-sm uppercase transition-all active:scale-95 ${
-                                    selectedSize === size 
-                                    ? 'bg-white text-black border-white font-bold' 
-                                    : 'bg-[#111] text-white border-white/10 hover:border-white/30'
-                                }`}
-                            >
-                                {size.trim()}
-                            </button>
-                        ))}
+
+                    <div className="w-full h-[1px] bg-white/5 my-4"></div>
+
+                    <p className="text-xs text-gray-400 font-mono leading-relaxed whitespace-pre-line">
+                        {product.description || "Классический силуэт, переосмысленный в рамках архивной коллекции. Идеальная посадка и премиальные материалы."}
+                    </p>
+
+                    {/* ВЫБОР РАЗМЕРА (Более компактная сетка) */}
+                    <div className="mt-8 mb-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Выберите размер</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {sizes.map(size => (
+                                <button 
+                                    key={size}
+                                    onClick={() => setSelectedSize(size)}
+                                    className={`px-6 py-3 rounded-xl border font-mono text-sm uppercase transition-all active:scale-95 ${
+                                        selectedSize === size 
+                                        ? 'bg-white text-black border-white font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]' 
+                                        : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30 hover:text-white'
+                                    }`}
+                                >
+                                    {size.trim()}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* ПЛАВАЮЩИЕ КНОПКИ ВНИЗУ */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/90 to-transparent max-w-md mx-auto z-40">
+            <div className="fixed bottom-0 left-0 right-0 p-4 pt-10 bg-gradient-to-t from-black via-black/95 to-transparent max-w-md mx-auto z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
                         <button 
                             onClick={openTryOnModal}
-                            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] border border-purple-500/50"
+                            className="flex-1 bg-[#1a1a1a] text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50"
                         >
-                            <Sparkles size={14} />
+                            <Sparkles size={14} className="text-purple-400" />
                             Примерить ИИ
                         </button>
 
-                        {/* 🔥 НОВОЕ: Показываем кнопку кастома ТОЛЬКО если это болванка */}
+                        {/* Кнопка кастома только для болванок */}
                         {product.is_customizable && (
                             <button 
                                 onClick={openCustomizer}
-                                className="flex-1 bg-[#111] border border-white/20 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all hover:bg-white/10"
+                                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] border border-purple-500/50"
                             >
                                 <Palette size={14} />
                                 Свой дизайн
@@ -237,8 +256,8 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
                     <button 
                         onClick={handleAddToCartClick}
-                        className={`w-full font-bold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition-all ${
-                            isAdded ? 'bg-green-500 text-white' : 'bg-white text-black'
+                        className={`w-full font-bold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg ${
+                            isAdded ? 'bg-green-500 text-white shadow-green-500/20' : 'bg-white text-black shadow-white/10'
                         }`}
                     >
                         {isAdded ? <><Heart size={18} className="fill-white"/> Добавлено</> : <><ShoppingBag size={18}/> В корзину</>}
