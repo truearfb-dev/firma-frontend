@@ -43,6 +43,11 @@ function App() {
     return `${BASE_URL}${cleanUrl}`;
   }
 
+  // 🔥 НОВОЕ: Принудительный скролл наверх при смене бренда или категории
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [selectedBrand, selectedCategory]);
+
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
@@ -188,14 +193,12 @@ function App() {
       }
   }
 
-  // 🔥 ОБНОВЛЕНО: Формируем список категорий, выделяя "Свой дизайн"
   const categories = useMemo(() => {
     const regularProducts = products.filter(p => !p.is_customizable);
     const allCats = regularProducts.map(p => p.category).filter(Boolean);
     return ['Все', 'Свой дизайн', 'Избранное', ...new Set(allCats)];
   }, [products]);
 
-  // 🔥 ОБНОВЛЕНО: Умная фильтрация болванок
   const filteredProducts = useMemo(() => {
     let result = products;
     
@@ -216,7 +219,7 @@ function App() {
     } else if (selectedCategory === 'Избранное') {
        result = result.filter(p => favorites.includes(p.id));
     } else if (selectedCategory === 'Все') {
-       result = result.filter(p => !p.is_customizable); // Прячем болванки из "Все"
+       result = result.filter(p => !p.is_customizable); 
     } else {
        result = result.filter(p => p.category === selectedCategory && !p.is_customizable);
     }
@@ -270,13 +273,16 @@ function App() {
           <section className="pt-32 pb-6 px-4 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
               <div className="animate-slide-up w-full">
-                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-[10px] font-bold text-red-500 hover:text-red-400 flex items-center gap-1 justify-center tracking-widest uppercase transition-colors mx-auto">
-                      <ArrowLeft size={14}/> ГЛАВНОЕ МЕНЮ
+                  {/* 🔥 ИСПРАВЛЕНИЕ: Кнопка возврата теперь выглядит как полноценная кнопка */}
+                  <button 
+                      onClick={() => setSelectedBrand(null)} 
+                      className="mb-6 px-5 py-2.5 bg-red-500/10 border border-red-500/30 text-[10px] font-bold text-red-500 rounded-xl flex items-center gap-2 justify-center tracking-widest uppercase transition-all mx-auto active:scale-95 hover:bg-red-500/20"
+                  >
+                      <ArrowLeft size={14}/> В ГЛАВНОЕ МЕНЮ
                   </button>
                   <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{selectedBrand.name}</h1>
                   <p className="text-gray-400 text-sm font-light max-w-xs mx-auto mb-4">{selectedBrand.description || "Официальная коллекция"}</p>
                   
-                  {/* 🔥 НОВОЕ: Условия доставки бренда */}
                   {selectedBrand.delivery_info && (
                       <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-3 mt-2">
                           <span className="text-[9px] uppercase font-bold text-gray-500 block mb-1 tracking-widest">Доставка</span>
@@ -344,7 +350,6 @@ function App() {
                         : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30 hover:text-white'
                     }`}
                 >
-                    {/* 🔥 НОВОЕ: Умные иконки для категорий */}
                     {cat === 'Избранное' ? (
                         <Heart size={14} className={selectedCategory === cat ? "fill-black" : ""} />
                     ) : cat === 'Свой дизайн' ? (
@@ -385,7 +390,6 @@ function App() {
                       
                       {product.old_price && <div className="absolute top-4 left-4 z-20 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">Sale</div>}
                       
-                      {/* Метка для кастома */}
                       {product.is_customizable && <div className="absolute top-4 left-4 z-20 bg-purple-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg flex items-center gap-1"><Palette size={10}/> Болванка</div>}
 
                       <button onClick={(e) => handleToggleFavorite(e, product.id)} className={`absolute z-20 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all ${gridView === 'grid' ? 'top-3 right-3 w-8 h-8' : 'top-6 right-6 w-10 h-10'}`}>
