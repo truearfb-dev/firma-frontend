@@ -19,8 +19,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     
     const [isVerifyingSub, setIsVerifyingSub] = useState(false);
     const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-    
-    // 🔥 НОВЫЙ СТЕЙТ ДЛЯ ПОЛНОЭКРАННОГО ФОТО
     const [fullscreenImage, setFullscreenImage] = useState(null);
     
     const fileInputRef = useRef(null);
@@ -159,7 +157,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                     <img 
                         key={idx} 
                         src={getImgUrl(img)} 
-                        onClick={() => setFullscreenImage(img)} // 🔥 Клик для открытия на весь экран
+                        onClick={() => setFullscreenImage(img)} 
                         className="w-full h-full object-cover shrink-0 snap-center cursor-pointer" 
                         alt={`Slide ${idx}`}
                     />
@@ -225,13 +223,16 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                             Примерить ИИ
                         </button>
 
-                        <button 
-                            onClick={openCustomizer}
-                            className="flex-1 bg-[#111] border border-white/20 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all hover:bg-white/10"
-                        >
-                            <Palette size={14} />
-                            Свой дизайн
-                        </button>
+                        {/* 🔥 НОВОЕ: Показываем кнопку кастома ТОЛЬКО если это болванка */}
+                        {product.is_customizable && (
+                            <button 
+                                onClick={openCustomizer}
+                                className="flex-1 bg-[#111] border border-white/20 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all hover:bg-white/10"
+                            >
+                                <Palette size={14} />
+                                Свой дизайн
+                            </button>
+                        )}
                     </div>
 
                     <button 
@@ -254,7 +255,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* 🔥 ПОЛНОЭКРАННОЕ ФОТО */}
+            {/* ПОЛНОЭКРАННОЕ ФОТО */}
             {fullscreenImage && (
                 <div 
                     className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center animate-fade-in"
@@ -270,7 +271,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                         src={getImgUrl(fullscreenImage)} 
                         className="w-full max-h-screen object-contain" 
                         alt="Fullscreen View" 
-                        onClick={(e) => e.stopPropagation()} // Чтобы клик по фото не закрывал модалку, если надо приблизить (браузер зум)
+                        onClick={(e) => e.stopPropagation()} 
                     />
                 </div>
             )}
@@ -278,7 +279,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             {/* МОДАЛЬНОЕ ОКНО ПРИМЕРОЧНОЙ */}
             {isTryOnModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
-                    {/* 🔥 ИСПРАВЛЕНИЕ: Опустили крестик ниже (top-16 вместо top-10) */}
                     <button onClick={() => setIsTryOnModalOpen(false)} className="absolute top-16 right-6 p-2 bg-white/10 rounded-full text-white z-[101]">
                         <X size={20} />
                     </button>
