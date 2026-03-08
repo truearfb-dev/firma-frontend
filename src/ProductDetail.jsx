@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Heart, ShoppingBag, Loader, Camera, Download, Sparkles, X, AlertCircle, Send, Palette } from 'lucide-react';
-import Customizer from './Customizer'; // 🔥 Импортируем наш Конструктор
+import Customizer from './Customizer'; 
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
-// 🔥 УКАЖИ ЗДЕСЬ ССЫЛКУ НА ТВОЙ КАНАЛ (куда пойдет человек при клике)
 const TG_CHANNEL_LINK = 'https://t.me/firma_project'; 
 
 const ProductDetail = ({ product, onBack, onAddToCart }) => {
@@ -18,11 +17,11 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     const [tryonResult, setTryonResult] = useState(null);
     const [tryonError, setTryonError] = useState(null);
     
-    // Стейт проверки подписки
     const [isVerifyingSub, setIsVerifyingSub] = useState(false);
-
-    // 🔥 Стейт Конструктора
     const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+    
+    // 🔥 НОВЫЙ СТЕЙТ ДЛЯ ПОЛНОЭКРАННОГО ФОТО
+    const [fullscreenImage, setFullscreenImage] = useState(null);
     
     const fileInputRef = useRef(null);
     const tgInitData = window.Telegram?.WebApp?.initData || '';
@@ -35,18 +34,16 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
     };
 
-    // Обычное добавление в корзину
     const handleAddToCartClick = () => {
         if (!selectedSize) {
             alert("Пожалуйста, выберите размер");
             return;
         }
-        onAddToCart(product, selectedSize); // Вызов без кастомного URL
+        onAddToCart(product, selectedSize); 
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2000);
     };
 
-    // --- ЛОГИКА КОНСТРУКТОРА ---
     const openCustomizer = () => {
         if (!selectedSize) {
             alert("Пожалуйста, выберите размер перед созданием дизайна");
@@ -57,12 +54,11 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
     const handleCustomDesignSave = (customUrl) => {
         setIsCustomizerOpen(false);
-        onAddToCart(product, selectedSize, customUrl); // 🔥 Передаем макет в корзину!
+        onAddToCart(product, selectedSize, customUrl); 
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2000);
     };
 
-    // --- ЛОГИКА ПРИМЕРОЧНОЙ ---
     const fetchLimits = async () => {
         try {
             const res = await fetch(`${API_URL}/try-on/status`, {
@@ -160,10 +156,16 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             {/* ГАЛЕРЕЯ */}
             <div className="w-full aspect-[4/5] bg-[#111] relative overflow-x-auto snap-x snap-mandatory flex no-scrollbar">
                 {images.map((img, idx) => (
-                    <img key={idx} src={getImgUrl(img)} className="w-full h-full object-cover shrink-0 snap-center" alt={`Slide ${idx}`}/>
+                    <img 
+                        key={idx} 
+                        src={getImgUrl(img)} 
+                        onClick={() => setFullscreenImage(img)} // 🔥 Клик для открытия на весь экран
+                        className="w-full h-full object-cover shrink-0 snap-center cursor-pointer" 
+                        alt={`Slide ${idx}`}
+                    />
                 ))}
                 {images.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
                         {images.map((_, idx) => (
                             <div key={idx} className="w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
                         ))}
@@ -214,7 +216,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             {/* ПЛАВАЮЩИЕ КНОПКИ ВНИЗУ */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/90 to-transparent max-w-md mx-auto z-40">
                 <div className="flex flex-col gap-2">
-                    {/* Ряд с доп. функциями */}
                     <div className="flex gap-2">
                         <button 
                             onClick={openTryOnModal}
@@ -244,19 +245,41 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 </div>
             </div>
 
-            {/* 🔥 МОДАЛЬНОЕ ОКНО КОНСТРУКТОРА */}
+            {/* МОДАЛЬНОЕ ОКНО КОНСТРУКТОРА */}
             {isCustomizerOpen && (
                 <Customizer 
-                    bgImage={getImgUrl(images[0])} // Передаем первое фото товара как фон
+                    bgImage={getImgUrl(images[0])} 
                     onClose={() => setIsCustomizerOpen(false)}
                     onSave={handleCustomDesignSave}
                 />
             )}
 
+            {/* 🔥 ПОЛНОЭКРАННОЕ ФОТО */}
+            {fullscreenImage && (
+                <div 
+                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center animate-fade-in"
+                    onClick={() => setFullscreenImage(null)}
+                >
+                    <button 
+                        onClick={() => setFullscreenImage(null)} 
+                        className="absolute top-16 right-6 p-3 bg-white/10 rounded-full text-white z-[201] hover:bg-white/20 transition-all"
+                    >
+                        <X size={24} />
+                    </button>
+                    <img 
+                        src={getImgUrl(fullscreenImage)} 
+                        className="w-full max-h-screen object-contain" 
+                        alt="Fullscreen View" 
+                        onClick={(e) => e.stopPropagation()} // Чтобы клик по фото не закрывал модалку, если надо приблизить (браузер зум)
+                    />
+                </div>
+            )}
+
             {/* МОДАЛЬНОЕ ОКНО ПРИМЕРОЧНОЙ */}
             {isTryOnModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
-                    <button onClick={() => setIsTryOnModalOpen(false)} className="absolute top-10 right-6 p-2 bg-white/10 rounded-full text-white z-[101]">
+                    {/* 🔥 ИСПРАВЛЕНИЕ: Опустили крестик ниже (top-16 вместо top-10) */}
+                    <button onClick={() => setIsTryOnModalOpen(false)} className="absolute top-16 right-6 p-2 bg-white/10 rounded-full text-white z-[101]">
                         <X size={20} />
                     </button>
 
@@ -275,7 +298,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                             </p>
                         </div>
 
-                        {/* РОУТИНГ СОСТОЯНИЙ ЛИМИТОВ */}
                         {tryonStatus?.remaining === 0 ? (
                             tryonStatus?.is_subscribed ? (
                                 <div className="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center mb-4 animate-scale-in">
