@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package, Heart, X, Search, Square, LayoutGrid, Tag } from 'lucide-react'
+import { Loader, CheckCircle, Copy, Package, Heart, X, Search, Square, LayoutGrid, Tag, ArrowLeft } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
@@ -146,7 +146,6 @@ function App() {
     }
   };
 
-  // 🔥 ОБНОВЛЕНО: Добавлен третий параметр (customDesignUrl)
   const handleAddToCart = (product, size, customDesignUrl = null) => {
     const itemToAdd = { ...product, selectedSize: size, customDesignUrl };
     setCart([...cart, itemToAdd]); 
@@ -158,14 +157,13 @@ function App() {
     setCart(cart.filter((_, index) => index !== indexToRemove));
   }
 
-  // 🔥 ОБНОВЛЕНО: Передача custom_design_url на сервер
   const handleCheckout = async () => {
     if (!user || !initData) { alert("Ошибка: Нет авторизации"); return; }
     
     const orderItems = cart.map(item => ({ 
         product_id: item.id, 
         size: item.selectedSize || null,
-        custom_design_url: item.customDesignUrl || null // Отправляем макет, если он есть
+        custom_design_url: item.customDesignUrl || null 
     }));
 
     try {
@@ -262,7 +260,10 @@ function App() {
           <section className="pt-32 pb-6 px-4 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
               <div className="animate-slide-up">
-                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-xs font-mono text-gray-500 hover:text-white flex items-center gap-1 justify-center"><X size={12}/> СБРОСИТЬ ФИЛЬТР</button>
+                  {/* 🔥 ИСПРАВЛЕНИЕ: Кнопка "ГЛАВНОЕ МЕНЮ" красного цвета */}
+                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-[10px] font-bold text-red-500 hover:text-red-400 flex items-center gap-1 justify-center tracking-widest uppercase transition-colors">
+                      <ArrowLeft size={14}/> ГЛАВНОЕ МЕНЮ
+                  </button>
                   <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{selectedBrand.name}</h1>
                   <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Официальная коллекция"}</p>
               </div>
@@ -420,7 +421,6 @@ function App() {
         .animate-scanline { animation: scanline 4s linear infinite; }
       `}} />
 
-      {/* 🔥 ИСПРАВЛЕНИЕ: Центрированная шапка, уведена из-под системных кнопок */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
         <div className="flex flex-col items-center justify-center pt-14 pb-3 max-w-md mx-auto">
           {isSearchOpen ? (
