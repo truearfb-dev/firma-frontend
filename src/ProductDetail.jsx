@@ -24,6 +24,15 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     const fileInputRef = useRef(null);
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
+    // 🔥 ИСПРАВЛЕНИЕ: Принудительный скролл в самый верх при открытии карточки
+    useEffect(() => {
+        window.scrollTo(0, 0); // Сбрасываем глобальный скролл окна
+        const container = document.getElementById('product-scroll-container');
+        if (container) {
+            container.scrollTop = 0; // Сбрасываем внутренний скролл контента
+        }
+    }, [product]);
+
     const sizes = product.sizes ? product.sizes.split(',') : ['S', 'M', 'L'];
     const images = product.image_url ? product.image_url.split(',') : [];
 
@@ -34,7 +43,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
 
     const handleAddToCartClick = () => {
         if (!selectedSize) {
-            // 🔥 Небольшой UX-трюк: если размер не выбран, делаем легкую вибрацию ошибки
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
             alert("Пожалуйста, выберите размер");
             return;
@@ -145,15 +153,12 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     };
 
     return (
-        // 🔥 ИСПРАВЛЕНИЕ: Добавлен pt-24 (отступ сверху для шапки) и flex-структура
         <div className="bg-black min-h-screen text-white animate-fade-in pt-24 pb-32 flex flex-col">
             
-            <div className="flex-1 overflow-y-auto px-4 no-scrollbar">
+            {/* 🔥 ИСПРАВЛЕНИЕ: Добавили ID чтобы принудительно сбрасывать скролл этого блока */}
+            <div id="product-scroll-container" className="flex-1 overflow-y-auto px-4 no-scrollbar">
                 
-                {/* 🔥 ИСПРАВЛЕНИЕ: Галерея теперь в виде красивой карточки (rounded-3xl) с кнопкой внутри */}
                 <div className="w-full aspect-[4/5] bg-[#111] relative overflow-hidden rounded-3xl border border-white/10 mb-6 shadow-2xl">
-                    
-                    {/* Кнопка "Назад" интегрирована прямо в фото */}
                     <button 
                         onClick={onBack} 
                         className="absolute top-4 left-4 z-20 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-all text-white hover:bg-white hover:text-black"
@@ -173,7 +178,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                         ))}
                     </div>
 
-                    {/* Точки навигации галереи */}
                     {images.length > 1 && (
                         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none z-10">
                             {images.map((_, idx) => (
@@ -183,7 +187,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                     )}
                 </div>
 
-                {/* ИНФО О ТОВАРЕ (Выровнено по краям) */}
                 <div className="px-2">
                     <div className="flex justify-between items-start mb-3">
                         <div className="flex-1 pr-4">
@@ -206,7 +209,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                         {product.description || "Классический силуэт, переосмысленный в рамках архивной коллекции. Идеальная посадка и премиальные материалы."}
                     </p>
 
-                    {/* ВЫБОР РАЗМЕРА (Более компактная сетка) */}
                     <div className="mt-8 mb-4">
                         <div className="flex justify-between items-center mb-3">
                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Выберите размер</span>
@@ -230,7 +232,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 </div>
             </div>
 
-            {/* ПЛАВАЮЩИЕ КНОПКИ ВНИЗУ */}
             <div className="fixed bottom-0 left-0 right-0 p-4 pt-10 bg-gradient-to-t from-black via-black/95 to-transparent max-w-md mx-auto z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
@@ -242,7 +243,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                             Примерить ИИ
                         </button>
 
-                        {/* Кнопка кастома только для болванок */}
                         {product.is_customizable && (
                             <button 
                                 onClick={openCustomizer}
@@ -265,7 +265,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 </div>
             </div>
 
-            {/* МОДАЛЬНОЕ ОКНО КОНСТРУКТОРА */}
             {isCustomizerOpen && (
                 <Customizer 
                     bgImage={getImgUrl(images[0])} 
@@ -274,7 +273,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* ПОЛНОЭКРАННОЕ ФОТО */}
             {fullscreenImage && (
                 <div 
                     className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center animate-fade-in"
@@ -295,7 +293,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 </div>
             )}
 
-            {/* МОДАЛЬНОЕ ОКНО ПРИМЕРОЧНОЙ */}
             {isTryOnModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
                     <button onClick={() => setIsTryOnModalOpen(false)} className="absolute top-16 right-6 p-2 bg-white/10 rounded-full text-white z-[101]">
