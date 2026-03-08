@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Trash2, ArrowRight } from 'lucide-react';
+import { X, Trash2, ArrowRight, Palette } from 'lucide-react';
 
-const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech'; // ТВОЙ URL
+const BASE_URL = 'https://firmashop-truear.waw0.amvera.tech';
 
 const Cart = ({ items, onClose, onRemove, onCheckout }) => {
   const total = items.reduce((sum, item) => sum + item.price, 0);
@@ -13,7 +13,9 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
 
   return (
     <div className="fixed inset-0 z-[70] bg-black animate-fade-in flex flex-col pb-safe">
-      <div className="px-6 py-4 flex items-center justify-between border-b border-white/10">
+      
+      {/* 🔥 ИСПРАВЛЕНИЕ: Добавлен pt-16, чтобы спустить шапку из-под челки iPhone */}
+      <div className="px-6 pb-4 pt-16 flex items-center justify-between border-b border-white/10">
         <h2 className="text-xl font-black uppercase tracking-tighter">Корзина ({items.length})</h2>
         <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all">
           <X size={20} />
@@ -29,27 +31,41 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
         ) : (
           items.map((item, index) => (
             <div key={`${item.id}-${index}`} className="flex gap-4 animate-slide-up">
-              <div className="w-20 h-24 bg-[#111] rounded-lg overflow-hidden shrink-0">
-                <img src={getImgUrl(item.image_url)} className="w-full h-full object-cover" />
+              <div className="w-20 h-24 bg-[#111] rounded-lg overflow-hidden shrink-0 border border-white/5">
+                {/* 🔥 НОВОЕ: Если есть кастомный макет, показываем его вместо обычной фотки */}
+                <img 
+                    src={item.customDesignUrl ? getImgUrl(item.customDesignUrl) : getImgUrl(item.image_url)} 
+                    className="w-full h-full object-cover" 
+                />
               </div>
               
               <div className="flex-1 flex flex-col justify-between py-1">
                 <div>
                   <h3 className="font-bold text-sm uppercase leading-tight mb-1">{item.name}</h3>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1.5 items-start">
                     <p className="text-[10px] text-gray-500 font-mono uppercase">
-                        {item.brand ? item.brand.name : 'Firma'}
+                        {item.brand ? item.brand.name : 'Firma Archive'}
                     </p>
-                    {item.selectedSize && (
-                        <span className="self-start px-2 py-0.5 bg-white/10 rounded text-[10px] font-bold text-white">
-                            Размер: {item.selectedSize}
-                        </span>
-                    )}
+                    
+                    <div className="flex flex-wrap gap-1.5">
+                        {item.selectedSize && (
+                            <span className="px-2 py-0.5 bg-white/10 rounded text-[10px] font-bold text-white">
+                                Размер: {item.selectedSize}
+                            </span>
+                        )}
+                        
+                        {/* 🔥 НОВОЕ: Плашка для кастомного дизайна */}
+                        {item.customDesignUrl && (
+                            <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-[10px] font-bold text-purple-400 flex items-center gap-1">
+                                <Palette size={10} /> Макет
+                            </span>
+                        )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-between items-end">
-                  <span className="font-mono font-bold">{item.price} ₽</span>
-                  <button onClick={() => onRemove(index)} className="text-gray-600 hover:text-red-500 transition-colors">
+                  <span className="font-mono font-bold text-lg">{item.price} ₽</span>
+                  <button onClick={() => onRemove(index)} className="text-gray-600 hover:text-red-500 transition-colors p-1">
                     <Trash2 size={16} />
                   </button>
                 </div>
