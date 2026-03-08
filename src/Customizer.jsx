@@ -94,7 +94,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         }));
     };
 
-    // Изменение текста (теперь через нижнюю панель)
+    // Изменение текста (через нижнюю панель)
     const updateText = (e) => {
         if (!activeId) return;
         setElements(elements.map(el => el.id === activeId ? { ...el, content: e.target.value } : el));
@@ -186,12 +186,26 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
     return (
         <div className="fixed inset-0 z-[120] bg-black flex flex-col animate-fade-in touch-none">
             
-            {/* 🔥 ИСПРАВЛЕНИЕ: Шапка опущена ниже (pt-14), чтобы не пересекаться с "челкой" iPhone */}
-            <div className="flex justify-between items-center p-4 pt-14 bg-black/90 backdrop-blur border-b border-white/10 shrink-0">
-                <button onClick={onClose} className="p-2 bg-white/10 rounded-full"><X size={20} /></button>
-                <div className="font-black tracking-widest uppercase text-sm">Свой Дизайн</div>
-                <button onClick={handleSave} disabled={isSaving || elements.length === 0 || !isBgLoaded} className={`p-2 rounded-full ${elements.length > 0 ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-500'}`}>
-                    {isSaving ? <Loader size={20} className="animate-spin"/> : <Save size={20} />}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Шапка опущена ЕЩЕ НИЖЕ (pt-24), чтобы не пересекаться с Telegram UI */}
+            <div className="flex justify-between items-center px-4 pb-4 pt-24 bg-black/90 backdrop-blur border-b border-white/10 shrink-0 gap-2">
+                <button onClick={onClose} className="p-3 bg-white/10 rounded-full active:scale-90 transition-all shrink-0">
+                    <X size={20} />
+                </button>
+                
+                <div className="font-black tracking-widest uppercase text-xs text-center flex-1 truncate px-1">
+                    Свой Дизайн
+                </div>
+                
+                {/* 🔥 ИСПРАВЛЕНИЕ: Кнопка Сохранить стала большой и с текстом */}
+                <button 
+                    onClick={handleSave} 
+                    disabled={isSaving || elements.length === 0 || !isBgLoaded} 
+                    className={`flex items-center justify-center gap-1.5 px-4 py-3 rounded-full shrink-0 transition-all ${elements.length > 0 ? 'bg-purple-600 text-white active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.5)]' : 'bg-white/5 text-gray-500'}`}
+                >
+                    {isSaving ? <Loader size={16} className="animate-spin"/> : <Save size={16} />}
+                    <span className="text-[10px] font-bold uppercase tracking-widest mt-[1px]">
+                        {isSaving ? 'Загрузка...' : 'Сохранить'}
+                    </span>
                 </button>
             </div>
 
@@ -226,7 +240,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                                 onTouchStart={(e) => handleTouchStart(e, el.id)}
                                 onMouseDown={(e) => handleTouchStart(e, el.id)}
                             >
-                                {/* 🔥 ИСПРАВЛЕНИЕ: Текст теперь просто текст (div), чтобы клавиатура телефона не прыгала */}
+                                {/* Текст теперь просто текст (div), редактируется через нижнюю панель */}
                                 {el.type === 'text' ? (
                                     <div 
                                         className="font-black text-center whitespace-nowrap p-1"
@@ -243,7 +257,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                 </div>
             </div>
 
-            {/* 🔥 ОБНОВЛЕННАЯ НИЖНЯЯ ПАНЕЛЬ */}
+            {/* НИЖНЯЯ ПАНЕЛЬ */}
             <div className="bg-black border-t border-white/10 shrink-0 pb-8 pt-4 px-4 flex flex-col items-center justify-center gap-4">
                 {activeEl ? (
                     <div className="w-full flex flex-col gap-4 animate-slide-up">
