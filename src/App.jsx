@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader, CheckCircle, Copy, Package, Heart, X, Search, Square, LayoutGrid, Tag, ArrowLeft } from 'lucide-react'
+import { Loader, CheckCircle, Copy, Package, Heart, X, Search, Square, LayoutGrid, Tag, ArrowLeft, Palette } from 'lucide-react'
 import BottomNav from './BottomNav'
 import ProductDetail from './ProductDetail'
 import Cart from './Cart'
@@ -188,13 +188,17 @@ function App() {
       }
   }
 
+  // 🔥 ОБНОВЛЕНО: Формируем список категорий, выделяя "Свой дизайн"
   const categories = useMemo(() => {
-    const allCats = products.map(p => p.category).filter(Boolean);
-    return ['Все', 'Избранное', ...new Set(allCats)];
+    const regularProducts = products.filter(p => !p.is_customizable);
+    const allCats = regularProducts.map(p => p.category).filter(Boolean);
+    return ['Все', 'Свой дизайн', 'Избранное', ...new Set(allCats)];
   }, [products]);
 
+  // 🔥 ОБНОВЛЕНО: Умная фильтрация болванок
   const filteredProducts = useMemo(() => {
     let result = products;
+    
     if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         result = result.filter(p => 
@@ -202,13 +206,19 @@ function App() {
             (p.brand && p.brand.name.toLowerCase().includes(query))
         );
     }
+    
     if (selectedBrand) {
         result = result.filter(p => p.brand_id === selectedBrand.id);
     }
-    if (selectedCategory === 'Избранное') {
+    
+    if (selectedCategory === 'Свой дизайн') {
+       result = result.filter(p => p.is_customizable);
+    } else if (selectedCategory === 'Избранное') {
        result = result.filter(p => favorites.includes(p.id));
-    } else if (selectedCategory !== 'Все') {
-       result = result.filter(p => p.category === selectedCategory);
+    } else if (selectedCategory === 'Все') {
+       result = result.filter(p => !p.is_customizable); // Прячем болванки из "Все"
+    } else {
+       result = result.filter(p => p.category === selectedCategory && !p.is_customizable);
     }
     return result;
   }, [products, selectedCategory, favorites, selectedBrand, searchQuery]);
@@ -259,13 +269,20 @@ function App() {
         {!searchQuery && (
           <section className="pt-32 pb-6 px-4 flex flex-col items-center justify-center text-center">
             {selectedBrand ? (
-              <div className="animate-slide-up">
-                  {/* 🔥 ИСПРАВЛЕНИЕ: Кнопка "ГЛАВНОЕ МЕНЮ" красного цвета */}
-                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-[10px] font-bold text-red-500 hover:text-red-400 flex items-center gap-1 justify-center tracking-widest uppercase transition-colors">
+              <div className="animate-slide-up w-full">
+                  <button onClick={() => setSelectedBrand(null)} className="mb-4 text-[10px] font-bold text-red-500 hover:text-red-400 flex items-center gap-1 justify-center tracking-widest uppercase transition-colors mx-auto">
                       <ArrowLeft size={14}/> ГЛАВНОЕ МЕНЮ
                   </button>
                   <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{selectedBrand.name}</h1>
-                  <p className="text-gray-400 text-sm font-light max-w-xs mx-auto">{selectedBrand.description || "Официальная коллекция"}</p>
+                  <p className="text-gray-400 text-sm font-light max-w-xs mx-auto mb-4">{selectedBrand.description || "Официальная коллекция"}</p>
+                  
+                  {/* 🔥 НОВОЕ: Условия доставки бренда */}
+                  {selectedBrand.delivery_info && (
+                      <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-3 mt-2">
+                          <span className="text-[9px] uppercase font-bold text-gray-500 block mb-1 tracking-widest">Доставка</span>
+                          <span className="text-xs font-mono text-white whitespace-pre-line">{selectedBrand.delivery_info}</span>
+                      </div>
+                  )}
               </div>
             ) : (
               <div className="relative w-full py-12 flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/5 bg-[#0a0a0a] shadow-[0_0_40px_rgba(255,255,255,0.02)]">
@@ -327,8 +344,11 @@ function App() {
                         : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30 hover:text-white'
                     }`}
                 >
+                    {/* 🔥 НОВОЕ: Умные иконки для категорий */}
                     {cat === 'Избранное' ? (
                         <Heart size={14} className={selectedCategory === cat ? "fill-black" : ""} />
+                    ) : cat === 'Свой дизайн' ? (
+                        <Palette size={14} className={selectedCategory === cat ? "text-black" : "text-white"} />
                     ) : (
                         <Tag size={14} className={selectedCategory === cat ? "text-black" : "text-gray-500"} />
                     )}
@@ -364,6 +384,9 @@ function App() {
                   <div key={product.id} onClick={() => setSelectedProduct(product)} className={`group bg-[#0a0a0a] border border-white/5 rounded-xl cursor-pointer active:scale-95 transition-all relative flex flex-col ${gridView === 'grid' ? 'p-2' : 'p-4'}`}>
                       
                       {product.old_price && <div className="absolute top-4 left-4 z-20 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">Sale</div>}
+                      
+                      {/* Метка для кастома */}
+                      {product.is_customizable && <div className="absolute top-4 left-4 z-20 bg-purple-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg flex items-center gap-1"><Palette size={10}/> Болванка</div>}
 
                       <button onClick={(e) => handleToggleFavorite(e, product.id)} className={`absolute z-20 bg-black/50 backdrop-blur rounded-full flex items-center justify-center border border-white/10 active:scale-75 transition-all ${gridView === 'grid' ? 'top-3 right-3 w-8 h-8' : 'top-6 right-6 w-10 h-10'}`}>
                           <Heart size={gridView === 'grid' ? 14 : 18} className={`transition-all ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
