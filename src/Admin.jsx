@@ -5,7 +5,10 @@ const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
 const Admin = ({ user, initData }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [stats, setStats] = useState({ revenue: 0, orders: 0, users: 0 });
+  
+  // 🔥 Обновленный стейт статистики
+  const [stats, setStats] = useState({ revenue_all: 0, revenue_real: 0, revenue_month: 0, orders: 0, users: 0 });
+  
   const [brands, setBrands] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]); 
@@ -22,6 +25,7 @@ const Admin = ({ user, initData }) => {
   const [productDescription, setProductDescription] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [productFiles, setProductFiles] = useState([]); 
+  const [isCustomizable, setIsCustomizable] = useState(false); // 🔥 НОВОЕ: Флаг болванки
   
   const [productSearch, setProductSearch] = useState('');
   const [filterBrandId, setFilterBrandId] = useState(''); 
@@ -31,14 +35,15 @@ const Admin = ({ user, initData }) => {
   // BRAND FORM
   const [brandName, setBrandName] = useState('');
   const [brandDescription, setBrandDescription] = useState('');
+  const [brandDeliveryInfo, setBrandDeliveryInfo] = useState(''); // 🔥 НОВОЕ: Условия доставки
   const [brandFile, setBrandFile] = useState(null);
   const [editingBrand, setEditingBrand] = useState(null);
 
   const fileInputRef = useRef(null);
   const brandInputRef = useRef(null);
 
-  // 🔥 НОВОЕ: Стейт для хранения выбранных товаров при модерации
   const [linkProductIds, setLinkProductIds] = useState({});
+  const [openDropdownId, setOpenDropdownId] = useState(null); // 🔥 НОВОЕ: Для кастомного дропдауна в модерации
 
   const safeId = user.telegram_id || user.id;
 
@@ -153,6 +158,7 @@ const Admin = ({ user, initData }) => {
     formData.append('category', productCategory);
     formData.append('sizes', productSizes);
     formData.append('description', productDescription);
+    formData.append('is_customizable', isCustomizable ? 'true' : 'false'); // 🔥 Передаем флаг болванки
     if (selectedBrandId) formData.append('brand_id', selectedBrandId);
     
     if (productFiles.length > 0) {
@@ -190,6 +196,7 @@ const Admin = ({ user, initData }) => {
       setProductSizes(prod.sizes || 'S,M,L');
       setProductDescription(prod.description || '');
       setSelectedBrandId(prod.brand_id || '');
+      setIsCustomizable(prod.is_customizable || false); // 🔥
       setProductFiles([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -197,6 +204,7 @@ const Admin = ({ user, initData }) => {
   const cancelEditProduct = () => {
       setEditingProduct(null);
       setProductName(''); setProductPrice(''); setProductOldPrice(''); setProductFiles([]); setProductSizes('S,M,L'); setProductDescription('');
+      setIsCustomizable(false); // 🔥
   }
 
   const handleBrandSubmit = async (e) => {
@@ -209,6 +217,7 @@ const Admin = ({ user, initData }) => {
     formData.append('initData', initData); 
     formData.append('name', brandName);
     formData.append('description', brandDescription); 
+    formData.append('delivery_info', brandDeliveryInfo); // 🔥 Передаем условия доставки
     if (brandFile) formData.append('file', brandFile); 
 
     let url = `${API_URL}/admin/brands`;
@@ -235,6 +244,7 @@ const Admin = ({ user, initData }) => {
     setEditingBrand(brand);
     setBrandName(brand.name);
     setBrandDescription(brand.description || ''); 
+    setBrandDeliveryInfo(brand.delivery_info || ''); // 🔥
     setBrandFile(null); 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -243,6 +253,7 @@ const Admin = ({ user, initData }) => {
     setEditingBrand(null);
     setBrandName('');
     setBrandDescription('');
+    setBrandDeliveryInfo(''); // 🔥
     setBrandFile(null);
   };
 
@@ -255,17 +266,15 @@ const Admin = ({ user, initData }) => {
           });
           if (res.ok) {
               fetchOrders();
+              fetchStats(); // Обновляем статистику выручки
               if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
           }
       } catch (e) { console.error(e); }
   }
 
-  // 🔥 ОБНОВЛЕНО: Отправляем выбранный товар при аппруве
   const handleReviewAction = async (reviewId, action) => {
     try {
         const payload = { initData: initData, review_id: reviewId };
-        
-        // Если одобряем фото и выбран товар, прикрепляем его
         if (action === 'approve' && linkProductIds[reviewId]) {
             payload.product_id = parseInt(linkProductIds[reviewId]);
         }
@@ -331,16 +340,29 @@ const Admin = ({ user, initData }) => {
 
       {activeSection === 'dashboard' && (
         <div className="grid grid-cols-2 gap-4 animate-slide-up">
+            {/* 🔥 ОБНОВЛЕННАЯ СТАТИСТИКА */}
             <div className="bg-[#111] border border-white/10 p-4 rounded-xl col-span-2">
-                <span className="text-xs font-bold text-gray-500 uppercase">Выручка</span>
-                <div className="text-4xl font-mono font-bold text-green-400 mt-1">{stats.revenue.toLocaleString()} ₽</div>
+                <span className="text-xs font-bold text-gray-500 uppercase">Реальная выручка (Успешные)</span>
+                <div className="text-4xl font-mono font-bold text-green-400 mt-1">{(stats.revenue_real || 0).toLocaleString()} ₽</div>
             </div>
+            
             <div className="bg-[#111] border border-white/10 p-4 rounded-xl">
-                <span className="text-xs font-bold text-gray-500 uppercase">Заказы</span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase">За этот месяц</span>
+                <div className="text-xl font-mono font-bold mt-1 text-white">{(stats.revenue_month || 0).toLocaleString()} ₽</div>
+            </div>
+            
+            <div className="bg-[#111] border border-white/10 p-4 rounded-xl">
+                <span className="text-[10px] font-bold text-gray-500 uppercase">Грязная (Всего)</span>
+                <div className="text-xl font-mono font-bold mt-1 text-gray-400">{(stats.revenue_all || 0).toLocaleString()} ₽</div>
+            </div>
+            
+            <div className="bg-[#111] border border-white/10 p-4 rounded-xl">
+                <span className="text-xs font-bold text-gray-500 uppercase">Всего Заказов</span>
                 <div className="text-2xl font-mono font-bold mt-1">{stats.orders}</div>
             </div>
+            
             <div className="bg-[#111] border border-white/10 p-4 rounded-xl">
-                <span className="text-xs font-bold text-gray-500 uppercase">Клиенты</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Клиенты в Боте</span>
                 <div className="text-2xl font-mono font-bold mt-1">{stats.users}</div>
             </div>
         </div>
@@ -384,12 +406,14 @@ const Admin = ({ user, initData }) => {
                 </div>
 
                 <div className="flex gap-4">
+                    <input type="text" placeholder="Категория (Clothing, Silver, etc)" value={productCategory} onChange={e => setProductCategory(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
                     <input type="text" placeholder="Размеры (S,M,L)" value={productSizes} onChange={e => setProductSizes(e.target.value)} className="w-1/2 bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none"/>
-                    <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="bg-[#111] border border-white/10 rounded-xl px-4 text-white outline-none w-1/2">
-                        <option value="">Без бренда</option>
-                        {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
                 </div>
+
+                <select value={selectedBrandId} onChange={e => setSelectedBrandId(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none">
+                    <option value="">Без бренда (FIRMA Archive)</option>
+                    {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
 
                 <textarea 
                     placeholder="Описание товара (материал, посадка, детали...)" 
@@ -397,6 +421,18 @@ const Admin = ({ user, initData }) => {
                     onChange={e => setProductDescription(e.target.value)} 
                     className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none min-h-[100px] resize-none"
                 />
+
+                {/* 🔥 НОВЫЙ ЧЕКБОКС: БОЛВАНКА */}
+                <label className="flex items-center gap-3 p-4 bg-[#111] border border-white/10 rounded-xl cursor-pointer select-none active:scale-95 transition-all">
+                    <div className={`w-6 h-6 rounded border flex items-center justify-center transition-all ${isCustomizable ? 'bg-white border-white text-black' : 'border-white/20 text-transparent'}`}>
+                        <Check size={14} strokeWidth={4} />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold uppercase">Болванка для кастома</span>
+                        <span className="text-[10px] text-gray-500 leading-tight">Этот товар будет доступен в Конструкторе "Свой дизайн"</span>
+                    </div>
+                    <input type="checkbox" checked={isCustomizable} onChange={(e) => setIsCustomizable(e.target.checked)} className="hidden" />
+                </label>
 
                 <button disabled={isSubmitting} className={`w-full font-bold py-4 rounded-xl uppercase ${editingProduct ? 'bg-yellow-500 text-black' : 'bg-white text-black'}`}>
                     {isSubmitting ? <Loader className="animate-spin mx-auto"/> : (editingProduct ? "Сохранить изменения" : "Создать товар")}
@@ -504,6 +540,9 @@ const Admin = ({ user, initData }) => {
 
                 <input type="text" placeholder="Название бренда" value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center"/>
                 
+                {/* 🔥 НОВОЕ: Поле для доставки */}
+                <input type="text" placeholder="Условия доставки (напр: Бесплатно от 5000₽)" value={brandDeliveryInfo} onChange={e => setBrandDeliveryInfo(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white outline-none text-center text-sm"/>
+
                 <textarea 
                     placeholder="Описание бренда (история, стиль...)" 
                     value={brandDescription} 
@@ -552,16 +591,14 @@ const Admin = ({ user, initData }) => {
                     <div className="flex justify-between items-start mb-2">
                         <div>
                             <span className="text-xs font-bold text-gray-500 uppercase">Заказ #{order.id}</span>
-                            <div className="text-sm font-bold text-white">{order.customer}</div>
+                            <div className="text-sm font-bold text-white" dangerouslySetInnerHTML={{__html: order.customer}} />
                         </div>
                         <div className="text-right">
                             <div className="font-mono font-bold">{order.total_amount} ₽</div>
                             <div className="text-[10px] text-gray-500">{order.created_at}</div>
                         </div>
                     </div>
-                    <div className="text-xs text-gray-400 mb-4 pb-4 border-b border-white/5 font-mono leading-relaxed">
-                        {order.items}
-                    </div>
+                    <div className="text-xs text-gray-400 mb-4 pb-4 border-b border-white/5 font-mono leading-relaxed" dangerouslySetInnerHTML={{__html: order.items}} />
                     <div className="flex gap-2">
                         {['new', 'processing', 'sent', 'done'].map(st => (
                             <button 
@@ -589,49 +626,80 @@ const Admin = ({ user, initData }) => {
                     Все чисто.<br/>Новых фото нет.
                 </div>
             ) : (
-                pendingReviews.map(review => (
-                    <div key={review.id} className="bg-[#111] rounded-xl overflow-hidden border border-white/10 relative flex flex-col">
-                        <img 
-                            src={`https://firmashop-truear.waw0.amvera.tech${review.image_path}`} 
-                            className="w-full h-40 object-cover" 
-                        />
-                        
-                        {/* 🔥 НОВОЕ: Блок привязки товара */}
-                        <div className="p-2 border-b border-white/10 bg-black/50">
-                            <select 
-                                value={linkProductIds[review.id] || ''}
-                                onChange={(e) => setLinkProductIds({...linkProductIds, [review.id]: e.target.value})}
-                                className="w-full bg-[#111] border border-white/20 text-white text-[10px] uppercase font-bold p-2 rounded outline-none"
-                            >
-                                <option value="">Не прикреплять товар</option>
-                                {/* Показываем только активные товары */}
-                                {products.filter(p => p.is_active).map(p => (
-                                    <option key={p.id} value={p.id}>{p.name} ({p.price}₽)</option>
-                                ))}
-                            </select>
-                        </div>
+                pendingReviews.map(review => {
+                    // 🔥 НАХОДИМ ВЫБРАННЫЙ ТОВАР
+                    const selectedProductId = linkProductIds[review.id];
+                    const selectedProduct = products.find(p => String(p.id) === String(selectedProductId));
 
-                        <div className="p-3 flex justify-between items-center bg-[#111]">
-                            <div className="text-[10px] text-gray-500 font-mono">
-                                User #{review.user_id}
+                    return (
+                        <div key={review.id} className="bg-[#111] rounded-xl overflow-hidden border border-white/10 relative flex flex-col pb-2">
+                            <img 
+                                src={`https://firmashop-truear.waw0.amvera.tech${review.image_path}`} 
+                                className="w-full h-40 object-cover" 
+                            />
+                            
+                            {/* 🔥 НОВЫЙ КАСТОМНЫЙ ВЫБОР ТОВАРА (С КАРТИНКАМИ) */}
+                            <div className="p-2 border-b border-white/10 bg-black/50 relative">
+                                <button 
+                                    onClick={() => setOpenDropdownId(openDropdownId === review.id ? null : review.id)}
+                                    className="w-full bg-[#1a1a1a] border border-white/10 text-white text-[9px] uppercase font-bold p-2 rounded outline-none flex items-center justify-between hover:bg-white/5 transition-colors"
+                                >
+                                    {selectedProduct ? (
+                                        <div className="flex items-center gap-2 truncate">
+                                            <img src={getImgUrl(selectedProduct.image_url)} className="w-5 h-5 object-cover rounded-sm shrink-0" />
+                                            <span className="truncate">{selectedProduct.name}</span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-500">Прикрепить товар</span>
+                                    )}
+                                    <span className="text-gray-500 ml-1 shrink-0">▼</span>
+                                </button>
+                                
+                                {/* Выпадающий список */}
+                                {openDropdownId === review.id && (
+                                    <div className="absolute top-full left-0 right-0 bg-[#222] border border-white/10 rounded-lg mt-1 z-50 max-h-40 overflow-y-auto shadow-2xl">
+                                        <div 
+                                            onClick={() => { setLinkProductIds({...linkProductIds, [review.id]: null}); setOpenDropdownId(null); }}
+                                            className="p-3 text-[9px] uppercase font-bold hover:bg-red-500/20 cursor-pointer text-red-400 border-b border-white/5"
+                                        >
+                                            Без товара (Отвязать)
+                                        </div>
+                                        {products.filter(p => p.is_active).map(p => (
+                                            <div 
+                                                key={p.id}
+                                                onClick={() => { setLinkProductIds({...linkProductIds, [review.id]: p.id}); setOpenDropdownId(null); }}
+                                                className="flex items-center gap-3 p-2 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0"
+                                            >
+                                                <img src={getImgUrl(p.image_url)} className="w-8 h-8 object-cover rounded shrink-0" />
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-[10px] uppercase font-bold truncate">{p.name}</span>
+                                                    <span className="text-[9px] text-gray-400 font-mono">{p.price}₽</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => handleReviewAction(review.id, 'reject')}
-                                    className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
-                                >
-                                    <X size={16} strokeWidth={3} />
-                                </button>
-                                <button 
-                                    onClick={() => handleReviewAction(review.id, 'approve')}
-                                    className="w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
-                                >
-                                    <Check size={16} strokeWidth={3} />
-                                </button>
+
+                            <div className="px-2 pt-2 flex justify-between items-center bg-[#111]">
+                                <div className="flex gap-2 w-full">
+                                    <button 
+                                        onClick={() => handleReviewAction(review.id, 'reject')}
+                                        className="flex-1 h-8 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center active:scale-90 transition-all border border-red-500/20"
+                                    >
+                                        <X size={16} strokeWidth={3} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleReviewAction(review.id, 'approve')}
+                                        className="flex-1 h-8 bg-green-500 text-black rounded-lg flex items-center justify-center active:scale-90 transition-all shadow-lg"
+                                    >
+                                        <Check size={16} strokeWidth={3} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))
+                    );
+                })
             )}
         </div>
       )}
