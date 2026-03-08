@@ -4,6 +4,9 @@ import { Type, Image as ImageIcon, X, Trash2, Save, Plus, Minus, Check, Loader }
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
 
+// Палитра цветов для текста
+const TEXT_COLORS = ['#ffffff', '#000000', '#ef4444', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+
 const Customizer = ({ bgImage, onClose, onSave }) => {
     const [elements, setElements] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -15,26 +18,23 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
 
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
-    // 🔥 БЫСТРЫЙ И БЕЗОПАСНЫЙ ЗАГРУЗЧИК ФОНА
+    // БЫСТРЫЙ И БЕЗОПАСНЫЙ ЗАГРУЗЧИК ФОНА
     useEffect(() => {
         const fetchBg = async () => {
             try {
-                // 1. Пытаемся скачать напрямую, обманывая кэш Safari меткой времени
                 const nocacheUrl = bgImage + (bgImage.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-                
                 const res = await fetch(nocacheUrl);
                 if (!res.ok) throw new Error("Direct fetch failed");
 
                 const blob = await res.blob();
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setSafeBg(reader.result); // Сохраняем как мгновенный Base64
+                    setSafeBg(reader.result); 
                     setIsBgLoaded(true);
                 };
                 reader.readAsDataURL(blob);
             } catch (e) {
                 console.error("Direct fetch error, using fast proxy...", e);
-                // 2. Если упало (например, сервер отбил CORS), используем БЫСТРЫЙ прокси (1 сек вместо 40)
                 try {
                     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(bgImage)}`;
                     const resProxy = await fetch(proxyUrl);
@@ -58,7 +58,7 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
     // Добавление текста
     const addText = () => {
         const id = Date.now();
-        setElements([...elements, { id, type: 'text', content: 'ТЕКСТ', x: 100, y: 150, color: '#ffffff', size: 24 }]);
+        setElements([...elements, { id, type: 'text', content: 'ВАШ ТЕКСТ', x: 100, y: 150, color: '#ffffff', size: 24 }]);
         setActiveId(id);
     };
 
@@ -94,9 +94,16 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         }));
     };
 
-    // Обновление текста
-    const updateText = (e, id) => {
-        setElements(elements.map(el => el.id === id ? { ...el, content: e.target.value } : el));
+    // Изменение текста (теперь через нижнюю панель)
+    const updateText = (e) => {
+        if (!activeId) return;
+        setElements(elements.map(el => el.id === activeId ? { ...el, content: e.target.value } : el));
+    };
+
+    // Изменение цвета текста
+    const updateColor = (color) => {
+        if (!activeId) return;
+        setElements(elements.map(el => el.id === activeId ? { ...el, color: color } : el));
     };
 
     // Физика перемещения
@@ -138,12 +145,12 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         setIsSaving(true);
         
         try {
-            await new Promise(resolve => setTimeout(resolve, 200)); // Ждем исчезновения рамки
+            await new Promise(resolve => setTimeout(resolve, 200));
 
             const canvas = await html2canvas(canvasRef.current, {
                 backgroundColor: '#0a0a0a',
                 useCORS: true,
-                scale: 2 // Высокое качество
+                scale: 2 
             });
 
             canvas.toBlob(async (blob) => {
@@ -174,11 +181,13 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
         }
     };
 
+    const activeEl = elements.find(el => el.id === activeId);
+
     return (
         <div className="fixed inset-0 z-[120] bg-black flex flex-col animate-fade-in touch-none">
             
-            {/* Шапка */}
-            <div className="flex justify-between items-center p-4 bg-black/90 backdrop-blur border-b border-white/10 shrink-0">
+            {/* 🔥 ИСПРАВЛЕНИЕ: Шапка опущена ниже (pt-14), чтобы не пересекаться с "челкой" iPhone */}
+            <div className="flex justify-between items-center p-4 pt-14 bg-black/90 backdrop-blur border-b border-white/10 shrink-0">
                 <button onClick={onClose} className="p-2 bg-white/10 rounded-full"><X size={20} /></button>
                 <div className="font-black tracking-widest uppercase text-sm">Свой Дизайн</div>
                 <button onClick={handleSave} disabled={isSaving || elements.length === 0 || !isBgLoaded} className={`p-2 rounded-full ${elements.length > 0 ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-500'}`}>
@@ -202,7 +211,6 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                         <img src={safeBg} alt="product" className="w-full h-full object-cover opacity-80" />
                     )}
                     
-                    {/* Границы печати */}
                     <div className="absolute top-[20%] bottom-[20%] left-[20%] right-[20%] border border-dashed border-white/20 pointer-events-none rounded-xl">
                         <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-mono text-white/30 tracking-widest uppercase whitespace-nowrap">Зона печати</span>
                     </div>
@@ -218,15 +226,14 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                                 onTouchStart={(e) => handleTouchStart(e, el.id)}
                                 onMouseDown={(e) => handleTouchStart(e, el.id)}
                             >
+                                {/* 🔥 ИСПРАВЛЕНИЕ: Текст теперь просто текст (div), чтобы клавиатура телефона не прыгала */}
                                 {el.type === 'text' ? (
-                                    <input 
-                                        type="text" 
-                                        value={el.content}
-                                        onChange={(e) => updateText(e, el.id)}
-                                        className="bg-transparent border-none outline-none font-black text-center whitespace-nowrap p-0 m-0 w-auto"
+                                    <div 
+                                        className="font-black text-center whitespace-nowrap p-1"
                                         style={{ color: el.color, fontSize: `${el.size}px` }}
-                                        readOnly={!isActive} 
-                                    />
+                                    >
+                                        {el.content}
+                                    </div>
                                 ) : (
                                     <img src={el.content} alt="sticker" style={{ width: `${el.size}px`, height: 'auto' }} className="pointer-events-none block"/>
                                 )}
@@ -236,23 +243,50 @@ const Customizer = ({ bgImage, onClose, onSave }) => {
                 </div>
             </div>
 
-            {/* Нижняя панель управления */}
-            <div className="bg-black border-t border-white/10 shrink-0 pb-8 pt-4 px-4 h-[120px] flex items-center justify-center">
-                {activeId ? (
-                    <div className="flex w-full items-center justify-between gap-4 animate-slide-up">
-                        <button onClick={() => removeElement(activeId)} className="w-12 h-12 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-all border border-red-500/20">
-                            <Trash2 size={20}/>
-                        </button>
+            {/* 🔥 ОБНОВЛЕННАЯ НИЖНЯЯ ПАНЕЛЬ */}
+            <div className="bg-black border-t border-white/10 shrink-0 pb-8 pt-4 px-4 flex flex-col items-center justify-center gap-4">
+                {activeEl ? (
+                    <div className="w-full flex flex-col gap-4 animate-slide-up">
                         
-                        <div className="flex flex-1 items-center justify-center gap-4 bg-[#111] rounded-xl border border-white/10 h-12">
-                            <button onClick={() => updateSize(-10)} className="w-12 h-full flex items-center justify-center active:bg-white/10 rounded-l-xl"><Minus size={18}/></button>
-                            <span className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">Размер</span>
-                            <button onClick={() => updateSize(10)} className="w-12 h-full flex items-center justify-center active:bg-white/10 rounded-r-xl"><Plus size={18}/></button>
-                        </div>
+                        {/* Панель редактирования текста */}
+                        {activeEl.type === 'text' && (
+                            <>
+                                <input 
+                                    type="text" 
+                                    value={activeEl.content}
+                                    onChange={updateText}
+                                    placeholder="Введите текст"
+                                    className="w-full bg-[#111] border border-white/20 text-white px-4 py-3 rounded-xl outline-none font-bold text-center"
+                                />
+                                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 justify-center">
+                                    {TEXT_COLORS.map(c => (
+                                        <button 
+                                            key={c}
+                                            onClick={() => updateColor(c)}
+                                            className={`w-8 h-8 rounded-full border-2 shrink-0 shadow-lg transition-transform ${activeEl.color === c ? 'border-white scale-110' : 'border-white/20'}`}
+                                            style={{ backgroundColor: c }}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
-                        <button onClick={() => setActiveId(null)} className="w-12 h-12 bg-white text-black rounded-xl flex items-center justify-center active:scale-90 transition-all font-bold">
-                            <Check size={20}/>
-                        </button>
+                        {/* Кнопки размера и удаления */}
+                        <div className="flex w-full items-center justify-between gap-4">
+                            <button onClick={() => removeElement(activeId)} className="w-12 h-12 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center active:scale-90 transition-all border border-red-500/20 shrink-0">
+                                <Trash2 size={20}/>
+                            </button>
+                            
+                            <div className="flex flex-1 items-center justify-center gap-4 bg-[#111] rounded-xl border border-white/10 h-12">
+                                <button onClick={() => updateSize(-5)} className="w-12 h-full flex items-center justify-center active:bg-white/10 rounded-l-xl"><Minus size={18}/></button>
+                                <span className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">Размер</span>
+                                <button onClick={() => updateSize(5)} className="w-12 h-full flex items-center justify-center active:bg-white/10 rounded-r-xl"><Plus size={18}/></button>
+                            </div>
+
+                            <button onClick={() => setActiveId(null)} className="w-12 h-12 bg-white text-black rounded-xl flex items-center justify-center active:scale-90 transition-all font-bold shrink-0">
+                                <Check size={20}/>
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="flex gap-3 w-full animate-fade-in">
