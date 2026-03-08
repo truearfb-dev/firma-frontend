@@ -24,13 +24,11 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     const fileInputRef = useRef(null);
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
-    // 🔥 ИСПРАВЛЕНИЕ: Принудительный скролл в самый верх при открытии карточки
+    // Принудительный скролл наверх
     useEffect(() => {
-        window.scrollTo(0, 0); // Сбрасываем глобальный скролл окна
+        window.scrollTo(0, 0); 
         const container = document.getElementById('product-scroll-container');
-        if (container) {
-            container.scrollTop = 0; // Сбрасываем внутренний скролл контента
-        }
+        if (container) container.scrollTop = 0; 
     }, [product]);
 
     const sizes = product.sizes ? product.sizes.split(',') : ['S', 'M', 'L'];
@@ -40,6 +38,26 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         if (!url) return null;
         return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
     };
+
+    // 🔥 ИИ-ЛОГИКА: Определяем, можно ли это примерить, и куда надевать
+    const isAccessory = (categoryName) => {
+        if (!categoryName) return false;
+        const lowerCat = categoryName.toLowerCase();
+        // Если в категории есть эти слова — скрываем кнопку "Примерить ИИ"
+        const blocked = ['кепк', 'шапк', 'панам', 'аксессуар', 'маск', 'серебро', 'украшен', 'очк'];
+        return blocked.some(word => lowerCat.includes(word));
+    };
+
+    const getAiCategory = (categoryName) => {
+        if (!categoryName) return 'upper_body';
+        const lowerCat = categoryName.toLowerCase();
+        // Подсказываем нейросети, куда надевать вещь
+        if (lowerCat.includes('штан') || lowerCat.includes('брюк') || lowerCat.includes('джинс') || lowerCat.includes('шорт')) return 'lower_body';
+        if (lowerCat.includes('плать') || lowerCat.includes('юбк')) return 'dresses';
+        return 'upper_body'; // По умолчанию на торс
+    };
+
+    const showTryOnButton = !isAccessory(product.category);
 
     const handleAddToCartClick = () => {
         if (!selectedSize) {
@@ -102,6 +120,9 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         formData.append('initData', tgInitData);
         formData.append('product_id', product.id);
         formData.append('file', userPhoto);
+        
+        // 🔥 Передаем ИИ правильную часть тела
+        formData.append('ai_category', getAiCategory(product.category));
 
         try {
             const res = await fetch(`${API_URL}/try-on/generate`, { method: 'POST', body: formData });
@@ -155,7 +176,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     return (
         <div className="bg-black min-h-screen text-white animate-fade-in pt-24 pb-32 flex flex-col">
             
-            {/* 🔥 ИСПРАВЛЕНИЕ: Добавили ID чтобы принудительно сбрасывать скролл этого блока */}
             <div id="product-scroll-container" className="flex-1 overflow-y-auto px-4 no-scrollbar">
                 
                 <div className="w-full aspect-[4/5] bg-[#111] relative overflow-hidden rounded-3xl border border-white/10 mb-6 shadow-2xl">
@@ -235,13 +255,17 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             <div className="fixed bottom-0 left-0 right-0 p-4 pt-10 bg-gradient-to-t from-black via-black/95 to-transparent max-w-md mx-auto z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                        <button 
-                            onClick={openTryOnModal}
-                            className="flex-1 bg-[#1a1a1a] text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50"
-                        >
-                            <Sparkles size={14} className="text-purple-400" />
-                            Примерить ИИ
-                        </button>
+                        
+                        {/* 🔥 ИСПРАВЛЕНИЕ: Кнопка ИИ появляется ТОЛЬКО если это не кепка/маска */}
+                        {showTryOnButton && (
+                            <button 
+                                onClick={openTryOnModal}
+                                className="flex-1 bg-[#1a1a1a] text-white font-bold py-3.5 rounded-xl uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50"
+                            >
+                                <Sparkles size={14} className="text-purple-400" />
+                                Примерить ИИ
+                            </button>
+                        )}
 
                         {product.is_customizable && (
                             <button 
