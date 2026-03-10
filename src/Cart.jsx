@@ -14,10 +14,10 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
   return (
     <div className="fixed inset-0 z-[70] bg-black animate-fade-in flex flex-col pb-safe">
       
-      {/* 🔥 ИСПРАВЛЕНИЕ: Добавлен pt-16, чтобы спустить шапку из-под челки iPhone */}
-      <div className="px-6 pb-4 pt-16 flex items-center justify-between border-b border-white/10">
+      {/* 🔥 ИСПРАВЛЕНИЕ: Отступ увеличен до pt-24 */}
+      <div className="px-6 pb-4 pt-24 flex items-center justify-between border-b border-white/10">
         <h2 className="text-xl font-black uppercase tracking-tighter">Корзина ({items.length})</h2>
-        <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all">
+        <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all active:scale-90">
           <X size={20} />
         </button>
       </div>
@@ -32,7 +32,6 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
           items.map((item, index) => (
             <div key={`${item.id}-${index}`} className="flex gap-4 animate-slide-up">
               <div className="w-20 h-24 bg-[#111] rounded-lg overflow-hidden shrink-0 border border-white/5">
-                {/* 🔥 НОВОЕ: Если есть кастомный макет, показываем его вместо обычной фотки */}
                 <img 
                     src={item.customDesignUrl ? getImgUrl(item.customDesignUrl) : getImgUrl(item.image_url)} 
                     className="w-full h-full object-cover" 
@@ -54,7 +53,6 @@ const Cart = ({ items, onClose, onRemove, onCheckout }) => {
                             </span>
                         )}
                         
-                        {/* 🔥 НОВОЕ: Плашка для кастомного дизайна */}
                         {item.customDesignUrl && (
                             <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-[10px] font-bold text-purple-400 flex items-center gap-1">
                                 <Palette size={10} /> Макет
