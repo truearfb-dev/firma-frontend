@@ -23,11 +23,20 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     const fileInputRef = useRef(null);
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
+    // Сброс скролла при открытии товара
     useEffect(() => {
         window.scrollTo(0, 0); 
         const container = document.getElementById('product-scroll-container');
         if (container) container.scrollTop = 0; 
     }, [product]);
+
+    // 🔥 ИСПРАВЛЕНИЕ: Сброс скролла при открытии Примерочной
+    useEffect(() => {
+        if (isTryOnModalOpen) {
+            const modal = document.getElementById('tryon-modal-container');
+            if (modal) modal.scrollTop = 0;
+        }
+    }, [isTryOnModalOpen]);
 
     const sizes = product.sizes ? product.sizes.split(',') : ['S', 'M', 'L'];
     const images = product.image_url ? product.image_url.split(',') : [];
@@ -287,23 +296,20 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Полноэкранное фото теперь Flex-контейнер, чтобы кнопка 100% не наезжала на фото */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Полноэкранное фото без скролла, крестик на top-[120px] */}
             {fullscreenImage && (
                 <div 
-                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col animate-fade-in"
+                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center animate-fade-in touch-none"
                     onClick={() => setFullscreenImage(null)}
                 >
-                    {/* Верхняя безопасная зона для крестика (pt-24) */}
-                    <div className="flex justify-end p-4 pt-24 shrink-0 pointer-events-none">
-                        <button 
-                            onClick={() => setFullscreenImage(null)} 
-                            className="p-3 bg-white/10 rounded-full text-white z-[201] hover:bg-white/20 transition-all pointer-events-auto active:scale-90"
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
-                    {/* Зона для самой картинки */}
-                    <div className="flex-1 overflow-hidden flex items-center justify-center pb-10 px-2">
+                    <button 
+                        onClick={() => setFullscreenImage(null)} 
+                        className="absolute top-[120px] right-6 p-3 bg-white/10 rounded-full text-white z-[201] hover:bg-white/20 transition-all active:scale-90 shadow-xl"
+                    >
+                        <X size={24} />
+                    </button>
+                    
+                    <div className="w-full h-full p-4 pt-[180px] pb-20 flex items-center justify-center pointer-events-none">
                         <img 
                             src={getImgUrl(fullscreenImage)} 
                             className="max-w-full max-h-full object-contain pointer-events-auto rounded-lg" 
@@ -314,18 +320,18 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 </div>
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Крестик примерки опущен (top-24), а окно сдвинуто ниже (pt-40) */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Примерочная выравнивается по верхнему краю (justify-start), крестик на top-[120px] */}
             {isTryOnModalOpen && (
-                <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
+                <div id="tryon-modal-container" className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
                     
                     <button 
                         onClick={() => setIsTryOnModalOpen(false)} 
-                        className="fixed top-24 right-4 p-3 bg-white/10 rounded-full text-white z-[101] shadow-xl hover:bg-white/20 active:scale-90 transition-all"
+                        className="fixed top-[120px] right-6 p-3 bg-white/10 rounded-full text-white z-[101] shadow-xl hover:bg-white/20 active:scale-90 transition-all"
                     >
                         <X size={20} />
                     </button>
 
-                    <div className="min-h-full flex flex-col items-center justify-center p-4 pt-40 pb-10">
+                    <div className="min-h-full flex flex-col items-center justify-start p-4 pt-[180px] pb-10">
                         <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
                             {tryonStatus && (
                                 <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
