@@ -37,7 +37,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         return url.startsWith('http') ? url : `https://firmashop-truear.waw0.amvera.tech${url}`;
     };
 
-    // 🔥 ИСПРАВЛЕНИЕ: Теперь проверяем и Категорию, и Название товара!
     const isAccessory = (categoryName, productName) => {
         const textToCheck = `${categoryName || ''} ${productName || ''}`.toLowerCase();
         const blocked = ['кепк', 'шапк', 'панам', 'аксессуар', 'маск', 'серебро', 'украшен', 'очк', 'кольц', 'браслет'];
@@ -51,7 +50,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         return 'upper_body'; 
     };
 
-    // Если это аксессуар - кнопка ИИ не покажется
     const showTryOnButton = !isAccessory(product.category, product.name);
 
     const handleAddToCartClick = () => {
@@ -115,8 +113,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         formData.append('initData', tgInitData);
         formData.append('product_id', product.id);
         formData.append('file', userPhoto);
-        
-        // Передаем ИИ категорию
         formData.append('ai_category', getAiCategory(product.category, product.name));
 
         try {
@@ -291,40 +287,45 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
+            {/* 🔥 ИСПРАВЛЕНИЕ: Полноэкранное фото теперь Flex-контейнер, чтобы кнопка 100% не наезжала на фото */}
             {fullscreenImage && (
                 <div 
-                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center animate-fade-in"
+                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col animate-fade-in"
                     onClick={() => setFullscreenImage(null)}
                 >
-                    <button 
-                        onClick={() => setFullscreenImage(null)} 
-                        className="absolute top-16 right-6 p-3 bg-white/10 rounded-full text-white z-[201] hover:bg-white/20 transition-all"
-                    >
-                        <X size={24} />
-                    </button>
-                    <img 
-                        src={getImgUrl(fullscreenImage)} 
-                        className="w-full max-h-screen object-contain" 
-                        alt="Fullscreen View" 
-                        onClick={(e) => e.stopPropagation()} 
-                    />
+                    {/* Верхняя безопасная зона для крестика (pt-24) */}
+                    <div className="flex justify-end p-4 pt-24 shrink-0 pointer-events-none">
+                        <button 
+                            onClick={() => setFullscreenImage(null)} 
+                            className="p-3 bg-white/10 rounded-full text-white z-[201] hover:bg-white/20 transition-all pointer-events-auto active:scale-90"
+                        >
+                            <X size={24} />
+                        </button>
+                    </div>
+                    {/* Зона для самой картинки */}
+                    <div className="flex-1 overflow-hidden flex items-center justify-center pb-10 px-2">
+                        <img 
+                            src={getImgUrl(fullscreenImage)} 
+                            className="max-w-full max-h-full object-contain pointer-events-auto rounded-lg" 
+                            alt="Fullscreen View" 
+                            onClick={(e) => e.stopPropagation()} 
+                        />
+                    </div>
                 </div>
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Модалка стала скроллируемой, крестик жестко зафиксирован (fixed) */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Крестик примерки опущен (top-24), а окно сдвинуто ниже (pt-40) */}
             {isTryOnModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
                     
-                    {/* Кнопка закрытия теперь fixed и всегда на виду */}
                     <button 
                         onClick={() => setIsTryOnModalOpen(false)} 
-                        className="fixed top-16 right-6 p-3 bg-white/10 rounded-full text-white z-[101] shadow-xl hover:bg-white/20 active:scale-90 transition-all"
+                        className="fixed top-24 right-4 p-3 bg-white/10 rounded-full text-white z-[101] shadow-xl hover:bg-white/20 active:scale-90 transition-all"
                     >
                         <X size={20} />
                     </button>
 
-                    {/* Контейнер для центрирования контента, если экран большой, или скролла, если маленький */}
-                    <div className="min-h-full flex flex-col items-center justify-center p-4 py-28">
+                    <div className="min-h-full flex flex-col items-center justify-center p-4 pt-40 pb-10">
                         <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
                             {tryonStatus && (
                                 <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
