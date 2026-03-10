@@ -10,11 +10,8 @@ const Orders = ({ user, initData, onClose }) => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                // Берем надежный ID пользователя и кодируем данные безопасности
                 const tgId = user.telegram_id || user.id;
                 const encodedInit = encodeURIComponent(initData);
-                
-                // Правильный запрос к новому бэкенду
                 const res = await fetch(`${API_URL}/orders/${tgId}?initData=${encodedInit}`);
 
                 if (res.ok) {
@@ -57,8 +54,8 @@ const Orders = ({ user, initData, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] bg-black animate-fade-in flex flex-col pb-safe">
-            {/* 🔥 ИСПРАВЛЕНИЕ: Шапка опущена ниже (pt-16) */}
-            <div className="px-6 pb-4 pt-16 flex items-center justify-between border-b border-white/10 shrink-0">
+            {/* 🔥 ИСПРАВЛЕНИЕ: Отступ увеличен до pt-24 */}
+            <div className="px-6 pb-4 pt-24 flex items-center justify-between border-b border-white/10 shrink-0">
                 <h2 className="text-xl font-black uppercase tracking-tighter">Мои заказы</h2>
                 <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all active:scale-90">
                     <X size={20} />
@@ -97,7 +94,6 @@ const Orders = ({ user, initData, onClose }) => {
                                 <span className="text-[9px] uppercase font-bold text-gray-600 tracking-widest block mb-2">Состав заказа:</span>
                                 <div className="text-xs text-gray-300 font-mono leading-relaxed space-y-1">
                                     {order.items_names ? order.items_names.split(', ').map((item, idx) => {
-                                        // Проверяем, есть ли пометка кастома в названии товара
                                         const isCustom = item.includes('🎨');
                                         const cleanName = item.replace(' 🎨 (Кастом)', '');
                                         
