@@ -314,14 +314,13 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: ЖЕСТКАЯ ФИКСАЦИЯ РАЗМЕРОВ. Кнопки поверх скролла. */}
+            {/* 🔥 ИСПРАВЛЕНИЕ ЗУМА: Полный контроль размеров и скролла через vw/dvh */}
             {fullscreenImage && (
                 <div 
-                    className="fixed top-0 left-0 w-full z-[200] bg-black animate-fade-in flex flex-col"
-                    style={{ height: '100dvh' }} // Используем dvh чтобы игнорировать челки браузера
+                    className="fixed top-0 left-0 w-full z-[200] bg-black animate-fade-in"
+                    style={{ height: '100dvh' }} 
                     onClick={() => setFullscreenImage(null)}
                 >
-                    {/* Жестко закрепленный крестик */}
                     <div className="absolute top-[100px] right-4 z-[210]">
                         <button 
                             onClick={() => setFullscreenImage(null)} 
@@ -331,15 +330,13 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                         </button>
                     </div>
 
-                    {/* Контейнер картинки со скроллом */}
-                    <div className={`flex-1 w-full h-full flex items-center justify-center ${fullscreenZoom > 1 ? 'overflow-auto' : 'overflow-hidden'}`}>
+                    {/* Контейнер с возможностью скролла при зуме (WebkitOverflowScrolling нужен для iOS) */}
+                    <div className="w-full h-full overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div 
                             style={{ 
-                                width: `${fullscreenZoom * 100}%`, 
-                                height: `${fullscreenZoom * 100}%`, 
-                                minWidth: '100%', 
-                                minHeight: '100%',
-                                transition: 'width 0.2s ease, height 0.2s ease'
+                                width: `${fullscreenZoom * 100}vw`, 
+                                height: `${fullscreenZoom * 100}dvh`, 
+                                transition: 'width 0.25s ease, height 0.25s ease'
                             }} 
                             className="flex items-center justify-center"
                         >
@@ -352,7 +349,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                         </div>
                     </div>
 
-                    {/* Жестко закрепленные элементы управления */}
                     <div className="absolute bottom-12 left-0 right-0 flex justify-center z-[210] pointer-events-none">
                         <div 
                             className="flex items-center gap-6 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full px-5 py-2.5 shadow-[0_0_20px_rgba(0,0,0,0.5)] pointer-events-auto"
