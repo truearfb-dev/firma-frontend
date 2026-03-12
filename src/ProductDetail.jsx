@@ -18,9 +18,8 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     
     const [isVerifyingSub, setIsVerifyingSub] = useState(false);
     const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-    const [fullscreenImage, setFullscreenImage] = useState(null);
     
-    // 🔥 НОВОЕ: Стейт для управления зумом
+    const [fullscreenImage, setFullscreenImage] = useState(null);
     const [fullscreenZoom, setFullscreenZoom] = useState(1);
     
     const fileInputRef = useRef(null);
@@ -41,7 +40,6 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         }
     }, [isTryOnModalOpen]);
 
-    // Сброс зума при открытии новой картинки
     useEffect(() => {
         if (fullscreenImage) setFullscreenZoom(1);
     }, [fullscreenImage]);
@@ -181,16 +179,15 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         document.body.removeChild(link);
     };
 
-    // 🔥 НОВОЕ: Функции управления зумом
     const handleZoomIn = (e) => {
         e.stopPropagation();
-        setFullscreenZoom(prev => Math.min(prev + 0.5, 3)); // Максимум 300%
+        setFullscreenZoom(prev => Math.min(prev + 0.5, 3)); 
         if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     };
 
     const handleZoomOut = (e) => {
         e.stopPropagation();
-        setFullscreenZoom(prev => Math.max(prev - 0.5, 1)); // Минимум 100%
+        setFullscreenZoom(prev => Math.max(prev - 0.5, 1)); 
         if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     };
 
@@ -317,55 +314,66 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Интерактивное зум-окно для детального просмотра */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: ЖЕСТКАЯ ФИКСАЦИЯ РАЗМЕРОВ. Кнопки поверх скролла. */}
             {fullscreenImage && (
                 <div 
-                    className="fixed inset-0 z-[200] bg-black animate-fade-in touch-none"
+                    className="fixed top-0 left-0 w-full z-[200] bg-black animate-fade-in flex flex-col"
+                    style={{ height: '100dvh' }} // Используем dvh чтобы игнорировать челки браузера
                     onClick={() => setFullscreenImage(null)}
                 >
-                    <button 
-                        onClick={() => setFullscreenImage(null)} 
-                        className="absolute top-28 right-4 p-3 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full text-white z-[201] shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-black/80 active:scale-90 transition-all"
-                    >
-                        <X size={24} />
-                    </button>
-
-                    {/* Панель управления зумом */}
-                    <div 
-                        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full px-5 py-2.5 z-[201] shadow-[0_0_20px_rgba(0,0,0,0.5)]"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button onClick={handleZoomOut} className={`p-2 transition-all ${fullscreenZoom <= 1 ? 'text-gray-600' : 'text-white active:scale-90'}`}>
-                            <Minus size={20} />
-                        </button>
-                        <span className="text-[10px] font-mono font-bold text-white min-w-[36px] text-center tracking-widest">
-                            {Math.round(fullscreenZoom * 100)}%
-                        </span>
-                        <button onClick={handleZoomIn} className={`p-2 transition-all ${fullscreenZoom >= 3 ? 'text-gray-600' : 'text-white active:scale-90'}`}>
-                            <Plus size={20} />
+                    {/* Жестко закрепленный крестик */}
+                    <div className="absolute top-[100px] right-4 z-[210]">
+                        <button 
+                            onClick={() => setFullscreenImage(null)} 
+                            className="p-3 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full text-white shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-black/80 active:scale-90 transition-all pointer-events-auto"
+                        >
+                            <X size={24} />
                         </button>
                     </div>
-                    
-                    {/* Контейнер изображения с поддержкой панорамирования (scroll) при зуме */}
-                    <div className="absolute inset-0 overflow-auto flex items-center justify-center pointer-events-auto no-scrollbar">
-                        <img 
-                            src={getImgUrl(fullscreenImage)} 
-                            style={{
-                                width: fullscreenZoom === 1 ? '100%' : `${100 * fullscreenZoom}vw`,
-                                height: fullscreenZoom === 1 ? '100%' : `${100 * fullscreenZoom}vh`,
-                                objectFit: 'contain',
-                                maxWidth: 'none',
-                                transition: 'width 0.2s ease-out, height 0.2s ease-out'
-                            }}
-                            alt="Fullscreen View" 
-                            onClick={(e) => e.stopPropagation()} 
-                        />
+
+                    {/* Контейнер картинки со скроллом */}
+                    <div className={`flex-1 w-full h-full flex items-center justify-center ${fullscreenZoom > 1 ? 'overflow-auto' : 'overflow-hidden'}`}>
+                        <div 
+                            style={{ 
+                                width: `${fullscreenZoom * 100}%`, 
+                                height: `${fullscreenZoom * 100}%`, 
+                                minWidth: '100%', 
+                                minHeight: '100%',
+                                transition: 'width 0.2s ease, height 0.2s ease'
+                            }} 
+                            className="flex items-center justify-center"
+                        >
+                            <img 
+                                src={getImgUrl(fullscreenImage)} 
+                                className="w-full h-full object-contain pointer-events-auto" 
+                                alt="Fullscreen View" 
+                                onClick={(e) => e.stopPropagation()} 
+                            />
+                        </div>
+                    </div>
+
+                    {/* Жестко закрепленные элементы управления */}
+                    <div className="absolute bottom-12 left-0 right-0 flex justify-center z-[210] pointer-events-none">
+                        <div 
+                            className="flex items-center gap-6 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full px-5 py-2.5 shadow-[0_0_20px_rgba(0,0,0,0.5)] pointer-events-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button onClick={handleZoomOut} className={`p-2 transition-all ${fullscreenZoom <= 1 ? 'text-gray-600' : 'text-white active:scale-90'}`}>
+                                <Minus size={20} />
+                            </button>
+                            <span className="text-[10px] font-mono font-bold text-white min-w-[36px] text-center tracking-widest">
+                                {Math.round(fullscreenZoom * 100)}%
+                            </span>
+                            <button onClick={handleZoomIn} className={`p-2 transition-all ${fullscreenZoom >= 3 ? 'text-gray-600' : 'text-white active:scale-90'}`}>
+                                <Plus size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {isTryOnModalOpen && (
-                <div id="tryon-modal-container" className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
+                <div id="tryon-modal-container" className="fixed top-0 left-0 w-full z-[100] bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in" style={{ height: '100dvh' }}>
                     
                     <button 
                         onClick={() => setIsTryOnModalOpen(false)} 
@@ -375,7 +383,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                     </button>
 
                     <div className="min-h-full flex flex-col items-center justify-start p-4 pt-[160px] pb-10">
-                        <div className="w-full max-w-sm m-auto bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
+                        <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
                             {tryonStatus && (
                                 <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
                                     Доступно примерок: <span className="text-white font-bold">{tryonStatus.remaining} из {tryonStatus.total_limit}</span>
