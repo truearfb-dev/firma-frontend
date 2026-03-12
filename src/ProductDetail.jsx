@@ -30,11 +30,13 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         if (container) container.scrollTop = 0; 
     }, [product]);
 
-    // Сброс скролла при открытии Примерочной
+    // 🔥 ИСПРАВЛЕНИЕ: Добавлен setTimeout, чтобы окно 100% успело появиться перед скроллом
     useEffect(() => {
         if (isTryOnModalOpen) {
-            const modal = document.getElementById('tryon-modal-container');
-            if (modal) modal.scrollTop = 0;
+            setTimeout(() => {
+                const modal = document.getElementById('tryon-modal-container');
+                if (modal) modal.scrollTop = 0;
+            }, 10);
         }
     }, [isTryOnModalOpen]);
 
@@ -296,41 +298,41 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Картинка по центру, крестик красиво наложен ПОВЕРХ нее с тенью и блюром */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Абсолютно черный фон, растянутое фото без отступов, яркий крестик поверх всего */}
             {fullscreenImage && (
                 <div 
-                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center animate-fade-in touch-none"
+                    className="fixed inset-0 z-[200] bg-black flex items-center justify-center animate-fade-in touch-none"
                     onClick={() => setFullscreenImage(null)}
                 >
                     <button 
                         onClick={() => setFullscreenImage(null)} 
-                        className="absolute top-[100px] right-4 p-3 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full text-white z-[201] hover:bg-black/80 transition-all active:scale-90 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+                        className="absolute top-28 right-4 p-3 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full text-white z-[201] hover:bg-black/80 transition-all active:scale-90 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
                     >
                         <X size={24} />
                     </button>
                     
                     <img 
                         src={getImgUrl(fullscreenImage)} 
-                        className="w-full h-full max-h-screen object-contain p-2" 
+                        className="w-full h-full object-contain pointer-events-auto" 
                         alt="Fullscreen View" 
                         onClick={(e) => e.stopPropagation()} 
                     />
                 </div>
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Крестик примерки стал контрастным, скролл работает естественно */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Крестик примерки top-28, контент сдвинут вниз (pt-[160px]), скролл вверху работает */}
             {isTryOnModalOpen && (
                 <div id="tryon-modal-container" className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
                     
                     <button 
                         onClick={() => setIsTryOnModalOpen(false)} 
-                        className="fixed top-[100px] right-4 p-3 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full text-white z-[101] shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-black/80 active:scale-90 transition-all"
+                        className="fixed top-28 right-4 p-3 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full text-white z-[101] shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-black/80 active:scale-90 transition-all"
                     >
                         <X size={20} />
                     </button>
 
-                    <div className="min-h-full flex flex-col items-center p-4 pt-[140px] pb-10">
-                        <div className="w-full max-w-sm m-auto bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
+                    <div className="min-h-full flex flex-col items-center justify-start p-4 pt-[160px] pb-10">
+                        <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
                             {tryonStatus && (
                                 <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
                                     Доступно примерок: <span className="text-white font-bold">{tryonStatus.remaining} из {tryonStatus.total_limit}</span>
