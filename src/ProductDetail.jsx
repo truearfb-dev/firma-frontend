@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Heart, ShoppingBag, Loader, Camera, Download, Sparkles, X, AlertCircle, Send, Palette } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingBag, Loader, Camera, Download, Sparkles, X, AlertCircle, Send, Palette, Plus, Minus } from 'lucide-react';
 import Customizer from './Customizer'; 
 
 const API_URL = 'https://firmashop-truear.waw0.amvera.tech/api';
@@ -20,6 +20,9 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
     const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
     const [fullscreenImage, setFullscreenImage] = useState(null);
     
+    // 🔥 НОВОЕ: Стейт для управления зумом
+    const [fullscreenZoom, setFullscreenZoom] = useState(1);
+    
     const fileInputRef = useRef(null);
     const tgInitData = window.Telegram?.WebApp?.initData || '';
 
@@ -37,6 +40,11 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
             }, 10);
         }
     }, [isTryOnModalOpen]);
+
+    // Сброс зума при открытии новой картинки
+    useEffect(() => {
+        if (fullscreenImage) setFullscreenZoom(1);
+    }, [fullscreenImage]);
 
     const sizes = product.sizes ? product.sizes.split(',') : ['S', 'M', 'L'];
     const images = product.image_url ? product.image_url.split(',') : [];
@@ -173,6 +181,19 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
         document.body.removeChild(link);
     };
 
+    // 🔥 НОВОЕ: Функции управления зумом
+    const handleZoomIn = (e) => {
+        e.stopPropagation();
+        setFullscreenZoom(prev => Math.min(prev + 0.5, 3)); // Максимум 300%
+        if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    };
+
+    const handleZoomOut = (e) => {
+        e.stopPropagation();
+        setFullscreenZoom(prev => Math.max(prev - 0.5, 1)); // Минимум 100%
+        if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    };
+
     return (
         <div className="bg-black min-h-screen text-white animate-fade-in pt-24 pb-32 flex flex-col">
             
@@ -296,10 +317,10 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                 />
             )}
 
-            {/* 🔥 ИСПРАВЛЕНИЕ: Картинка растягивается на весь экран (object-cover) */}
+            {/* 🔥 ИСПРАВЛЕНИЕ: Интерактивное зум-окно для детального просмотра */}
             {fullscreenImage && (
                 <div 
-                    className="fixed inset-0 z-[200] bg-black flex items-center justify-center animate-fade-in"
+                    className="fixed inset-0 z-[200] bg-black animate-fade-in touch-none"
                     onClick={() => setFullscreenImage(null)}
                 >
                     <button 
@@ -308,13 +329,38 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                     >
                         <X size={24} />
                     </button>
+
+                    {/* Панель управления зумом */}
+                    <div 
+                        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-black/60 backdrop-blur-xl border border-white/30 rounded-full px-5 py-2.5 z-[201] shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button onClick={handleZoomOut} className={`p-2 transition-all ${fullscreenZoom <= 1 ? 'text-gray-600' : 'text-white active:scale-90'}`}>
+                            <Minus size={20} />
+                        </button>
+                        <span className="text-[10px] font-mono font-bold text-white min-w-[36px] text-center tracking-widest">
+                            {Math.round(fullscreenZoom * 100)}%
+                        </span>
+                        <button onClick={handleZoomIn} className={`p-2 transition-all ${fullscreenZoom >= 3 ? 'text-gray-600' : 'text-white active:scale-90'}`}>
+                            <Plus size={20} />
+                        </button>
+                    </div>
                     
-                    <img 
-                        src={getImgUrl(fullscreenImage)} 
-                        className="w-full h-full object-cover pointer-events-auto" 
-                        alt="Fullscreen View" 
-                        onClick={(e) => e.stopPropagation()} 
-                    />
+                    {/* Контейнер изображения с поддержкой панорамирования (scroll) при зуме */}
+                    <div className="absolute inset-0 overflow-auto flex items-center justify-center pointer-events-auto no-scrollbar">
+                        <img 
+                            src={getImgUrl(fullscreenImage)} 
+                            style={{
+                                width: fullscreenZoom === 1 ? '100%' : `${100 * fullscreenZoom}vw`,
+                                height: fullscreenZoom === 1 ? '100%' : `${100 * fullscreenZoom}vh`,
+                                objectFit: 'contain',
+                                maxWidth: 'none',
+                                transition: 'width 0.2s ease-out, height 0.2s ease-out'
+                            }}
+                            alt="Fullscreen View" 
+                            onClick={(e) => e.stopPropagation()} 
+                        />
+                    </div>
                 </div>
             )}
 
@@ -328,7 +374,7 @@ const ProductDetail = ({ product, onBack, onAddToCart }) => {
                         <X size={20} />
                     </button>
 
-                    <div className="min-h-full flex flex-col items-center p-4 pt-[140px] pb-10">
+                    <div className="min-h-full flex flex-col items-center justify-start p-4 pt-[160px] pb-10">
                         <div className="w-full max-w-sm m-auto bg-[#111] border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center shadow-2xl">
                             {tryonStatus && (
                                 <div className="absolute top-0 left-0 right-0 bg-white/5 border-b border-white/10 py-2 text-center text-[9px] font-mono text-gray-400 uppercase tracking-widest">
